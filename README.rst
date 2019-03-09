@@ -2,6 +2,7 @@ perr
 =========================================
 Calculate the error of analytical large-scale structure models by comparing them against simulations at the field level.
 
+
 The code combines a number of source fields to get the best proxy of a target field. This is done by constructing transfer functions that minimize the mean-square model error in each k bin using linear regression. The code then computes the difference between the best-fit proxy and the target field, which can be used to quantify the error power spectrum of the halo bias model or other LSS models. For details, see https://arxiv.org/pdf/1811.10640.
 
 Example applications
@@ -28,6 +29,7 @@ Example usage
     $ run.sh mpiexec -n 8 python main_calc_Perr.py
 
 
- Installation
- ------------
+Installation
+------------
 
+The code requires `lsstools <https://github.com/mschmittfull/lsstools>`_ -- see installation guidelines there.
