@@ -17,15 +17,15 @@ Example usage
 
 - On single core:
 
-.. code-block:: bash
+  .. code-block:: bash
 
     $ run.sh python main_calc_Perr.py
 
 - On 8 cores:
 
-.. code-block:: bash
+  .. code-block:: bash
 
-    $./run.sh mpiexec -n 8 python main_calc_Perr.py
+    $ run.sh mpiexec -n 8 python main_calc_Perr.py
 
 
  Installation
