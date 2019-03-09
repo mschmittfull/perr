@@ -31,7 +31,17 @@ Example usage
 
 Modifying options
 -----------------
-The main code is in file main_calc_Perr.py and options can be modified there. To run different models, modify opts['trf_specs']. This is a list, where each entry specifies the source fields and target field to be matched. The code evaluates all entries in this list and saves the results in a pickle file.
+
+- In the code: The main code is in file main_calc_Perr.py and options can be modified there. To run different models, modify opts['trf_specs']. This is a list, where each entry specifies the source fields and target field to be matched. The code evaluates all entries in this list and saves the results in a pickle file.
+
+- On the command line: You can also change options on the command line by supplying a single string argument which contains a dictionary with options that overwrite the default options in the file. For example:
+
+.. code-block:: bash
+
+    $ run.sh python main_calc_Perr.py "{'sim_seed': 300}"
+
+Use this with caution because unwanted behavior can result when some options depend on others and they are modified before getting overwritten by command line arguments.
+
 
 Installation
 ------------
