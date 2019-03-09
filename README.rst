@@ -35,4 +35,4 @@ The main code is in file main_calc_Perr.py and options can be modified there. To
 
 Installation
 ------------
-You need to install `lsstools <https://github.com/mschmittfull/lsstools>`_ following the instructions there.
+The code requires `lsstools <https://github.com/mschmittfull/lsstools>`_ -- see installation guidelines there.
