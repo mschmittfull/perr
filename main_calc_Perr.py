@@ -26,7 +26,7 @@ import json
 
 # MS packages
 #import constants
-from lsstools from lsstools import Pickler
+from lsstools import Pickler
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
 import path_utils
