@@ -13,15 +13,14 @@ Example applications:
 
 Example usage:
 
-Run one single core:
+- On single core:
 
   ./run.sh python main_calc_Perr.py
 
-Run on multiple cores:
+- On multiple cores:
 
   ./run.sh mpiexec -n 2 python main_calc_Perr.py
 
 
  Installation:
 
- 
