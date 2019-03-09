@@ -29,6 +29,10 @@ Example usage
     $ run.sh mpiexec -n 8 python main_calc_Perr.py
 
 
+Modifying options
+-----------------
+The main code is in file main_calc_Perr.py and options can be modified there. To run different models, modify opts['trf_specs']. This is a list, where each entry specifies the source fields and target field to be matched. The code evaluates all entries in this list and saves the results in a pickle file.
+
 Installation
 ------------
 
