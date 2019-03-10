@@ -28,13 +28,13 @@ Example usage
 
     $ mpiexec -n 8 python main_calc_Perr.py
 
-- If `lsstools <https://github.com/mschmittfull/lsstools>`_ is installed in an anaconda environment, activate it first, for example
+- If `lsstools <https://github.com/mschmittfull/lsstools>`_ is installed in an anaconda environment, activate it first. For example:
 
   .. code-block:: bash
 
-    $ source activate nbodykit-0.3.4-env
+    $ source activate nbodykit-env
 
-  To automatically activate and deactivate the environment when running the code, modify and use run.sh, for example
+  To automatically activate and deactivate the environment when running the code, modify and use run.sh. For example:
 
   .. code-block:: bash
 
@@ -50,7 +50,7 @@ Modifying options
 
   .. code-block:: bash
 
-    $ run.sh python main_calc_Perr.py "{'sim_seed': 300}"
+    $ python main_calc_Perr.py "{'sim_seed': 300}"
 
   Use this with caution because unwanted behavior can result when some options depend on others and they are modified before getting overwritten by command line arguments.
 
@@ -58,6 +58,12 @@ Modifying options
 Installation
 ------------
 The code requires `lsstools <https://github.com/mschmittfull/lsstools>`_ -- see installation guidelines there.
+
+To test if the installation was successful, run
+
+  .. code-block:: bash
+
+    $ python test_main_calc_Perr.py
 
 
 Contributing

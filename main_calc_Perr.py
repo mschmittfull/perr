@@ -45,7 +45,7 @@ def main(argv):
         pass
     elif len(argv) == 2:
         # Update options given as 1st arg
-        # e.g. python main_quick_calc_Pk.py "{'Rsmooth_for_quadratic_sources': 10.0}"
+        # e.g. python main_calc_Perr.py "{'Rsmooth_for_quadratic_sources': 10.0}"
         import ast
         opts_update_dict = ast.literal_eval(argv[1])
         print("UPDATE OPTS:", opts_update_dict)
@@ -61,7 +61,6 @@ def main(argv):
     #####################################
 
     opts = OrderedDict()
-    opts['use_mpi'] = False
 
     # 14 Feb 2018: v0.2: Save trf fcns results more systematically.
     # 15 Feb 2018: v0.3: Change normalization of basis vectors after Cholesky orthogonalization.
@@ -107,7 +106,7 @@ def main(argv):
     # 19 Feb 2019: v1.0: First attempt to run everything with nbodykit 0.3.
     # 19 Feb 2019: v1.1: New code running with nbkit 0.3 agrees with old code using nbkit 0.1. For 1,2,4 ranks.    
     # 9 Mar 2019: v1.2: Refactor code into lsstools and perr packages.
-    opts['main_quick_calc_Pk_version'] = '1.2'
+    opts['main_calc_Perr_version'] = '1.2'
     
     ## ANALYSIS
     opts['Ngrid'] = 64
@@ -1736,10 +1735,6 @@ def main(argv):
             else:
                 paths[key] = os.path.expandvars(opts[key])
         
-    # init mpi    
-    if opts['use_mpi']:
-        from mpi4py import MPI
-
     from nbodykit import setup_logging, logging, CurrentMPIComm
     setup_logging()
     comm = CurrentMPIComm.get()
@@ -1754,7 +1749,7 @@ def main(argv):
     # Init Pickler instance to save pickle later (this will init pickle fname)
     pickler = None
     if comm.rank == 0:
-        pickler = Pickler.Pickler(path=paths['pickle_path'], base_fname='main_quick_calc_Pk',
+        pickler = Pickler.Pickler(path=paths['pickle_path'], base_fname='main_calc_Perr',
                                   file_format=opts['pickle_file_format'],
                                   rand_sleep=(opts['Ngrid']>128))
         print("Pickler: ", pickler.full_fname)
