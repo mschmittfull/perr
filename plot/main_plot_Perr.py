@@ -26,7 +26,8 @@ import constants
 #import fit_trf_fcns
 import logbook_main_calc_Perr_pickles
 from lsstools import Pickler
-import pickle_utils
+from lsstools.pickle_utils import pickle_utils
+from perr.path_utils import get_in_path
 
 
 def main():
@@ -305,7 +306,9 @@ def main():
                             'cats'],
         skip_keys_when_stacking=['opts','flat_opts','cat_infos'],
         return_base_vp_pickles=True,
-        return_base_vp_pickle_opts=True)
+        return_base_vp_pickle_opts=True,
+        get_in_path=get_in_path
+        )
 
     
     if True:
