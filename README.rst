@@ -37,7 +37,7 @@ Modifying options
 - On the command line: You can also change options on the command line by supplying a single string argument which contains a dictionary with options that overwrite the default options in the file. For example:
 
   .. code-block:: bash
-  
+
     $ run.sh python main_calc_Perr.py "{'sim_seed': 300}"
 
   Use this with caution because unwanted behavior can result when some options depend on others and they are modified before getting overwritten by command line arguments.
@@ -46,3 +46,8 @@ Modifying options
 Installation
 ------------
 The code requires `lsstools <https://github.com/mschmittfull/lsstools>`_ -- see installation guidelines there.
+
+
+Contributing
+------------
+To contribute, create a fork on github, make changes and commits, and submit a pull request on github.

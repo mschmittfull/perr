@@ -1,14 +1,7 @@
 #!/usr/bin/env python
-#
-# Marcel Schmittfull 2017 (mschmittfull@gmail.com)
-#
-
-
 
 from __future__ import print_function,division
-
 import os
-
 
 
 def main():
@@ -18,7 +11,7 @@ def main():
 
     tryid = 'tryQ1b'
 
-    binfile = '/home/mschmittfull/lssbisp2013/psiRec/python/main_quick_calc_Pk.py_%s' % tryid
+    binfile = '/home/mschmittfull/CODE/perr/main_calc_Perr.py_%s' % tryid
     #sim_seeds = range(300,310)
     #sim_seeds = range(303,310)
     #sim_seeds = range(0,3)
@@ -37,7 +30,7 @@ def main():
     send_mail = True
     for halo_mass_string in halo_mass_strings:
         for sim_seed in sim_seeds:
-            job_fname = 'main_quick_calc_Pk.job.helios_%s_%s_%d' % (
+            job_fname = 'main_calc_Perr.job.helios_%s_%s_%d' % (
                 tryid,halo_mass_string,sim_seed)
             if send_mail:
                 mail_string1 = '#SBATCH --mail-user=mschmittfull@gmail.com'
