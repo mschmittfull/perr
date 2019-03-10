@@ -34,7 +34,7 @@ Example usage
 
     $ source activate nbodykit-0.3.4-env
 
-  To automatically activate and deactivate the environment when running the code, use the bash script in run.sh, for example
+  To automatically activate and deactivate the environment when running the code, modify and use run.sh, for example
 
   .. code-block:: bash
 
