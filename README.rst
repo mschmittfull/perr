@@ -34,9 +34,9 @@ Example usage
 
     $ source activate nbodykit-0.3.4-env
 
-  To automatically activate and deactivate the environment when running the code, see an example bash script in run.sh. To use this, use for example
+  To automatically activate and deactivate the environment when running the code, use the bash script in run.sh, for example
 
-    .. code-block:: bash
+  .. code-block:: bash
 
     $ run.sh python main_calc_Perr.py
 
