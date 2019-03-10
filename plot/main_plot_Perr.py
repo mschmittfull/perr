@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#
-# Marcel Schmittfull 2019 (mschmittfull@gmail.com)
 
 
 from __future__ import print_function,division
@@ -17,10 +15,7 @@ from matplotlib import spines
 from matplotlib.ticker import MultipleLocator, MaxNLocator
 from scipy import interpolate as interp
 from scipy.io import savemat
-#from scipy.interpolate import RectBivariateSpline
-#import time
 import re
-#import h5py
 import random
 import glob
 import sys
@@ -28,11 +23,11 @@ import sys
 
 # MS packages
 import constants
+#import fit_trf_fcns
+import logbook_main_calc_Perr_pickles
 from lsstools import Pickler
 import pickle_utils
-import fit_trf_fcns
-import logbook_main_quick_calc_pickles
-from main_quick_plot_Pk import init_and_plot_Pk, get_texlabel, get_ax_size, get_bias_label_of_source
+
 
 def main():
     """
@@ -46,16 +41,15 @@ def main():
     save_plots = True
 
     # path of pickles
-    pickle_path = os.path.expandvars('$SCRATCH/lssbisp2013/psiRec/pickle/')
+    pickle_path = os.path.expandvars('$SCRATCH/perr/pickle/')
 
     ## Which pickle to load. Edit logbook....py to select a pickle.
-    loginfo = logbook_main_quick_calc_pickles.get_pickle_fname()
+    loginfo = logbook_main_calc_Perr_pickles.get_pickle_fname()
     fname = loginfo['fname']
     plot_opts = loginfo['plot_opts']
     
-    #### MORE OPTIONS
-        
 
+    #### MORE OPTIONS
 
     sim_seeds=[401,403]
     #sim_seeds = range(400,405)
@@ -1471,6 +1465,74 @@ def plot_DM_model_error(ax, plt_type, plot_opts, pickle_path,
         #raise Exception("continue here")
 
     return DMerror_stacked_pickles
+
+
+def get_texlabel(label, include_data_label=False, explicit=False):
+    # support bold phi
+    #rc('text', usetex=True)
+    #rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
+    #\\boldsymbol{\psi}_Z
+    
+    texlabels = {'delta_m': '$\\delta_m$',
+                'delta_m_growth': '$\\delta_{m}^2$',
+                'delta_m_tidal_G2': '$\\mathcal{G}_{2}[\\delta_m]$',
+                'hat_delta_h_from_b1_deltalin': '$t_1\delta_1$',
+                'hat_delta_h_from_b1_deltaZA': '$t_1\delta_Z$',
+                'hat_delta_h_one_loop_deltalin': '$t_1\\delta_1+t_2F_2[\\delta_1]+t_3\\delta_1^2+t_4\\mathcal{G}_2[\\delta_1]$',
+                'hat_delta_h_one_loop_deltaSPT': '$t_1(\\delta_1+F_2[\\delta_1])+t_2\\delta_1^2+t_{\\mathcal{G}_2}\\mathcal{G}_2[\\delta_1]$',
+                'hat_delta_h_one_loop_deltaZA': '$t_1\\delta_Z+t_2\\delta_Z^2+t_3\\mathcal{G}_2[\\delta_Z]$',
+                'hat_delta_h_from_deltanonl': '$t_1\\delta_\\mathrm{NL}+t_2\\delta_\\mathrm{NL}^2+t_3\\mathcal{G}_2[\\delta_\\mathrm{NL}]$',
+                'hat_delta_h_from_deltaZ_deltalin2_deltalinG2': '$t_1\\delta_Z+t_2\\delta_1^2+t_3\\mathcal{G}_2[\\delta_1]$',
+                'hat_delta_h_from_deltalin_deltaZ_deltalin2G2_deltaZ2G2': '$t_1\\delta_1+\\tilde t_1\\delta_Z+t_2\\delta_1^2+\\tilde t_2\\delta_Z^2 + t_3\\mathcal{G}_2[\\delta_1]+\\tilde t_3\\mathcal{G}_2[\\delta_Z]$',
+                'delta_h': '$\\delta_h$',
+                'deltalin': '$\\delta_1$',
+                'deltalin_growth': '$\\delta_1^2$',
+                'deltalin_tidal_G2': '$\\mathcal{G}_2[\\delta_1]$',
+                'deltalin_F2': '$F_2[\\delta_1]$',
+                'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ': 'Quadr. bias', #'$[1+b_1^L(k)\\delta_0+b_2^L(k)(\\delta_0^2-\\langle\\delta_0^2\\rangle)+b^L_{\\mathcal{G}_2}\\mathcal{G}_2](\\mathbf{q}+\psi_Z)$',
+                'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_Psi2LPT': '$[1+b_1^L(k)\\delta_0+b_2^L(k)(\\delta_0^2-\\langle\\delta_0^2\\rangle)+b^L_{\\mathcal{G}_2}\\mathcal{G}_2](\\mathbf{q}+\psi_\\mathrm{2LPT})$',
+                'hat_delta_h_from_Tdeltalin2G2_SHIFTEDBY_PsiZ': 'Quadr. bias', #'$[1+b_1^L(k)\\delta_0+b_2^L(k)(\\delta_0^2-\\langle\\delta_0^2\\rangle)+b^L_{\\mathcal{G}_2}\\mathcal{G}_2](\\mathbf{q}+\psi_Z)$',
+                'hat_delta_h_from_Tdeltalin2G2_SHIFTEDBY_Psi2LPT': '$[b_1^L(k)\\delta_0+b_2^L(k)(\\delta_0^2-\\langle\\delta_0^2\\rangle)+b^L_{\\mathcal{G}_2}\\mathcal{G}_2](\\mathbf{q}+\psi_\\mathrm{2LPT})$',
+                'hat_delta_h_from_b1_delta_m': 'Linear Std. Eul. bias', # $b_1(k)\\delta_\\mathrm{NL}$',
+                'hat_delta_h_from_1_Tdeltalin_SHIFTEDBY_PsiZ':'Linear bias', # '$[1+b_1^L(k)\\delta_0](\\mathbf{q}+\\psi_Z)$'
+                'delta_h_WEIGHT_M1': '$\\delta_{M_h}$',
+                'hat_delta_h_from_1_Tdeltalin2G23_SHIFTEDBY_PsiZ': 'Cubic bias',
+                'hat_delta_h_from_Tdeltalin2G23_SHIFTEDBY_PsiZ': 'Cubic bias',
+                'hat_delta_h_M0M1_noZ_from_T_1deltalin12G23_SHIFTEDBY_PsiZ': 'Cubic bias',
+                'hat_delta_h_M1M0_noZ_MPnn_from_1_T_deltalin12G23_SHIFTEDBY_PsiZ': 'Cubic bias',
+                'hat_delta_h_from_deltanonl_12G2': '$t_1\\delta_\\mathrm{NL}+t_2\\delta_\\mathrm{NL}^2+t_{\\mathcal{G}_2}\\mathcal{G}_2[\\delta_\\mathrm{NL}]$',
+                'hat_delta_h_from_delta_m_deltalin2_deltalinG2': '$t_1\\delta_\\mathrm{NL}+t_2\\delta_1^2+t_{\\mathcal{G}_2}\\mathcal{G}_2[\\delta_1]$',
+                'hat_delta_h_from_Tdeltalin_SHIFTEDBY_PsiZ': '$t_1\\tilde\\delta_1$'
+                }
+
+    if explicit:
+        texlabels['hat_delta_h_from_b1_delta_m'] = '$t_1\\delta_\\mathrm{NL}$'
+        texlabels['hat_delta_h_from_Tdeltalin2G2_SHIFTEDBY_PsiZ'] = '$\\beta_1\\tilde\\delta_1+\\beta_2\\tilde\\delta_2+\\beta_{\\mathcal{G}_2}\\tilde{\\mathcal{G}}_2$'
+    
+    if label in texlabels:
+        if not include_data_label:
+            return texlabels[label]
+        else:
+            if label.startswith('hat_delta_h_from'):
+                outlabel = 'data$=\\delta_n$, model = '
+            elif label.startswith('hat_delta_h_M0M1_noZ_from'):
+                outlabel = 'data$=\\alpha_0\\delta_n+\\alpha_1\\delta_M$, model = '
+            elif label.startswith('hat_delta_h_M1M0_noZ_MPnn_from'):
+                outlabel = 'data$=\\alpha_0\\delta_M+\\alpha_1\\delta_n^\\perp$, model = '
+            else:
+                outlabel = 'data=?, model = '
+            return outlabel + texlabels[label]
+    else:
+        return label
+
+
+def get_ax_size(fig,ax):
+    bbox = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    width, height = bbox.width, bbox.height
+    width *= fig.dpi
+    height *= fig.dpi
+    return width, height
+        
     
 
 

@@ -68,7 +68,7 @@ Modifying options
 
 Output
 ------
-If opts['keep_pickle'] is set True, the output is saved in a pickle file. This can be loaded and plotted using main_plot_Perr.py (TODO).
+If opts['keep_pickle'] is set True, the output is saved in a pickle file. This can be loaded and plotted using plot/main_plot_Perr.py. It is recommended to log the pickle filenames in plot/logbook_main_calc_Perr_pickles.py so they can be easily loaded later without having to run the code again.
 
 
 Installation

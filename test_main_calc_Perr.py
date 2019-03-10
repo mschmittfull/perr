@@ -496,8 +496,8 @@ def main(argv):
         if comm.rank == 0:
             Perr_lst = ['%.1f' % a for a in list(Perr)]
             Perr_expected_lst = ['%.1f' % a for a in list(Perr)]
-            logger.info('Result:\n%s' % str(','.join(Perr_lst)))
-            logger.info('Expected:\n%s' % str(','.join(Perr_expected_lst)))
+            logger.info('Perr:\n%s' % str(','.join(Perr_lst)))
+            logger.info('Expected Perr:\n%s' % str(','.join(Perr_expected_lst)))
             if np.allclose(Perr, Perr_expected, rtol=1e-3):
                 logger.info('TEST Perr: OK')
             else:
