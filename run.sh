@@ -29,7 +29,6 @@ if [ "$MS_HOST" == "MBPmsl15" ] ; then
     envname="nbodykit-0.3.7-env"
   else
     envname="nbodykit-0.1_for_psiRec"
-  #pythonbin=pythonw
   fi
 
 elif [ "$MS_HOST" == "helios" ]
@@ -43,7 +42,6 @@ then
   else
     envname="nbodykit-0.1.5_with_marcel_edits"
   fi
-  #pythonbin=python
   tmp_hdf5_use_file_locking=$HDF5_USE_FILE_LOCKING
   export HDF5_USE_FILE_LOCKING=FALSE
 
@@ -58,8 +56,6 @@ source activate $envname
 echo "$0: Activated virtualenv $envname"
 
 # run code, copy arguments
-#$pythonbin main_quick_calc_Pk.py "$@"
-#$pythonbin 
 "$@"
 
 # change environment back

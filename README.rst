@@ -18,15 +18,27 @@ Example usage
 
 - On single core:
 
-.. code-block:: bash
+  .. code-block:: bash
 
-    $ run.sh python main_calc_Perr.py
+    $ python main_calc_Perr.py
 
 - On 8 cores:
 
-.. code-block:: bash
+  .. code-block:: bash
 
-    $ run.sh mpiexec -n 8 python main_calc_Perr.py
+    $ mpiexec -n 8 python main_calc_Perr.py
+
+- If `lsstools <https://github.com/mschmittfull/lsstools>`_ is installed in an anaconda environment, activate it first, for example
+
+  .. code-block:: bash
+
+    $ source activate nbodykit-0.3.4-env
+
+  To automatically activate and deactivate the environment when running the code, see an example bash script in run.sh. To use this, use for example
+
+    .. code-block:: bash
+
+    $ run.sh python main_calc_Perr.py
 
 
 Modifying options
