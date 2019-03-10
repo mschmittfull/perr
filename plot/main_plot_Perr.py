@@ -35,7 +35,7 @@ def main():
     Plot power halo density and model for different mass bins.
     Average over realizations.
 
-    Use new pickles produced by main_quick_calc_Pk.py version>=0.2.
+    Use new pickles produced by main_calc_Perr.py version>=0.2.
     """
 
     # save plots as pdf or show them
@@ -301,7 +301,7 @@ def main():
     default_stack_and_vary_kwargs = dict(        
         pickle_path=pickle_path, base_fname=fname,
         comp_key='opts', #'flat_opts',
-        fname_pattern=r'^main_quick_calc_Pk.*.pickle$',
+        fname_pattern=r'^main_calc_Perr.*.pickle$',
         ignore_pickle_keys=['pickle_fname', 'out_rho_path', 'in_path', 'sim_irun','ssseed',
                             'cats'],
         skip_keys_when_stacking=['opts','flat_opts','cat_infos'],

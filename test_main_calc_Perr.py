@@ -315,7 +315,7 @@ def main(argv):
     
     
     ## what do to plot/save    
-    opts['keep_pickle'] = False
+    opts['keep_pickle'] = True
     opts['pickle_file_format'] = 'pickle'
     # plot using plotting code for single realization; difft from code plotting avg 
     do_plot = False
@@ -405,7 +405,7 @@ def main(argv):
     # Init Pickler instance to save pickle later (this will init pickle fname)
     pickler = None
     if comm.rank == 0:
-        pickler = Pickler.Pickler(path=paths['pickle_path'], base_fname='test_main_calc_Perr',
+        pickler = Pickler.Pickler(path=paths['pickle_path'], base_fname='main_calc_Perr',
                                   file_format=opts['pickle_file_format'],
                                   rand_sleep=(opts['Ngrid']>128))
         print("Pickler: ", pickler.full_fname)
