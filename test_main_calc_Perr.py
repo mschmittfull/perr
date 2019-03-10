@@ -257,23 +257,6 @@ def main(argv):
                                              save_bestfit_field='hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ'))
 
 
-        if True:
-            #if True:
-            # Cubic Lagrangian bias with delta^3: delta_Z + b1 deltalin(q+Psi) + b2 [deltalin^2-<deltalin^2>](q+Psi) + bG2 [G2](q+Psi)
-            # + b3 [delta^3](q+Psi)
-            # BEST MODEL WITHOUT MASS WEIGHTING
-            opts['trf_specs'].append(TrfSpec(linear_sources=['deltalin_SHIFTEDBY_deltalin',
-                                                             'deltalin_growth-mean_SHIFTEDBY_deltalin',
-                                                             'deltalin_G2_SHIFTEDBY_deltalin',
-                                                             'deltalin_cube-mean_SHIFTEDBY_deltalin'
-                                                             ],
-                                             fixed_linear_sources=['1_SHIFTEDBY_deltalin'],
-                                             field_to_smoothen_and_square=None,
-                                             quadratic_sources=[],
-                                             target_field=target,
-                                             save_bestfit_field='hat_delta_h_from_1_Tdeltalin2G23_SHIFTEDBY_PsiZ'))
-
-
     ## Smoothing for quadratic fields in Mpc/h
     #Rsmooth_lst = [0.1,2.5,5.0,10.0,20.0]
     Rsmooth_lst = [0.1]
@@ -502,7 +485,25 @@ def main(argv):
         tmp_opts['Rsmooth_for_quadratic_sources'] = R
         this_pickle_dict = combine_source_fields.actually_calc_Pks(tmp_opts, paths)
         pickle_dict_at_R[(R,)] = this_pickle_dict
-        
+    
+        residual_key = '[hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ]_MINUS_[delta_h]'
+        Perr = this_pickle_dict['Pkmeas'][(residual_key,residual_key)][1]
+        Perr_expected = np.array([
+            9965.6,17175.8,22744.4,19472.3,19081.2,19503.4,19564.9,18582.9,19200.1,16911.3,
+            16587.4,16931.9,15051.0,13835.1,13683.8,13109.9,12353.5,11900.2,11085.1,11018.4,
+            10154.0,9840.7,8960.6,8484.1,7942.2,7426.7,6987.8,6578.1,6269.1,5810.7,5511.7])
+
+        if comm.rank == 0:
+            Perr_lst = ['%.1f' % a for a in list(Perr)]
+            Perr_expected_lst = ['%.1f' % a for a in list(Perr)]
+            logger.info('Result:\n%s' % str(','.join(Perr_lst)))
+            logger.info('Expected:\n%s' % str(','.join(Perr_expected_lst)))
+            if np.allclose(Perr, Perr_expected, rtol=1e-3):
+                logger.info('TEST Perr: OK')
+            else:
+                logger.info('TEST Perr: FAILED')
+                raise Exception('Test failed')
+
         # save all resutls to pickle
         if comm.rank == 0:
             pickler.write_pickle(pickle_dict_at_R)

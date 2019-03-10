@@ -40,19 +40,35 @@ Example usage
 
     $ run.sh python main_calc_Perr.py
 
+ - To generate shifted densities (i.e. the IR-resummed shifted operators from the paper), run
+
+  .. code-block:: bash
+
+    $ python main_shift_catalog_by_Psi_grid.py
+
+  This saves the shifted densities to disk so they can be loaded with main_calc_Perr.py and used as operators in the bias expansion.
+
+
 
 Modifying options
 -----------------
 
-- In the code: The main code is in file main_calc_Perr.py and options can be modified there. To run different models, modify opts['trf_specs']. This is a list, where each entry specifies the source fields and target field to be matched. The code evaluates all entries in this list and saves the results in a pickle file.
+- In the code: The main code is in file main_calc_Perr.py. This contains examples for different simulations and halo bias models, and can be modified for new applications (perhaps make a copy and modify that). For a more minimal run script, see test_main_calc_Perr.py. 
 
-- On the command line: You can also change options on the command line by supplying a single string argument which contains a dictionary with options that overwrite the default options in the file. For example:
+- On the command line: Options can also be changed on the command line by supplying a single string argument which contains a dictionary with options that overwrite the default options in the file. For example:
 
   .. code-block:: bash
 
     $ python main_calc_Perr.py "{'sim_seed': 300}"
 
-  Use this with caution because unwanted behavior can result when some options depend on others and they are modified before getting overwritten by command line arguments.
+  This should be used with caution because unwanted behavior can result when some options depend on others and they are modified before getting overwritten by command line arguments.
+
+- To test different bias models, modify opts['trf_specs']. This is a list, where each entry specifies the source fields and target field to be matched. The code evaluates all entries in this list and saves the results in a pickle file.
+
+
+Output
+------
+If opts['keep_pickle'] is set True, the output is saved in a pickle file. This can be loaded and plotted using main_plot_Perr.py (TODO).
 
 
 Installation
@@ -65,7 +81,9 @@ To test if the installation was successful, run
 
     $ python test_main_calc_Perr.py
 
+and look for 'TEST Perr: OK' at the end.
+
 
 Contributing
 ------------
-To contribute, create a fork on github, make changes and commits, and submit a pull request on github.
+To contribute, please create a fork on github, make changes and commits, and submit a pull request on github.
