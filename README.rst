@@ -40,7 +40,7 @@ Example usage
 
     $ run.sh python main_calc_Perr.py
 
- - To generate shifted densities (i.e. the IR-resummed shifted operators from the paper), run
+- To generate shifted densities (i.e. the IR-resummed shifted operators from the paper), run
 
   .. code-block:: bash
 
@@ -77,9 +77,9 @@ The code requires `lsstools <https://github.com/mschmittfull/lsstools>`_ -- see 
 
 To test if the installation was successful, run
 
-  .. code-block:: bash
+.. code-block:: bash
 
-    $ python test_main_calc_Perr.py
+  $ python test_main_calc_Perr.py
 
 and look for 'TEST Perr: OK' at the end.
 
