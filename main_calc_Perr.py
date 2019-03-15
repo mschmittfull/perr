@@ -8,6 +8,8 @@ import numpy as np
 import os
 import random
 import sys
+# needed to save/load TrfSpec objects in pickle files.
+import ujson
 
 # MS packages
 from lsstools import combine_source_fields_to_match_target as combine_source_fields

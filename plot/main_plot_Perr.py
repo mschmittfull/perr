@@ -19,7 +19,7 @@ import re
 import random
 import glob
 import sys
-
+import ujson
 
 # MS packages
 import constants
