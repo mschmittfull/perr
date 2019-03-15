@@ -315,7 +315,7 @@ def main(argv):
     
     
     ## what do to plot/save    
-    opts['keep_pickle'] = True
+    opts['keep_pickle'] = False
     opts['pickle_file_format'] = 'pickle'
     # plot using plotting code for single realization; difft from code plotting avg 
     do_plot = False
