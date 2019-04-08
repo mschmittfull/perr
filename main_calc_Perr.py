@@ -764,7 +764,7 @@ def main(argv):
                                              target_field=target,
                                              save_bestfit_field='hat_delta_h_from_b1_delta_m'))
 
-        if False:
+        if True:
             # Expand in nonlinear density, hat_delta_h = b1 delta_m_NL + b2 delta_m_NL^2 + b_G2 G2[delta_m_NL].
             # Bad b/c squaring delta_m_NL is very large
             opts['trf_specs'].append(TrfSpec(linear_sources=['delta_m'],

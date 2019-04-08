@@ -43,7 +43,7 @@ def main():
     Example:
     ./run.sh mpiexec -n 3 python main_ms_gadget_shift_catalog_by_Psi_grid.py 64 64
     """
-    # TODO: 
+    # TODO (already done?): 
     # - create uniform catalog
     # - load deltalin on grid
     # - weigh ptcles in uniform catalog by 1+delta_lin
@@ -100,7 +100,7 @@ def main():
     # ms_gadget L=500 sim
     opts['sim_name'] = 'ms_gadget'
     opts['boxsize'] = 500.0
-    opts['basepath'] = os.path.expandvars('$SCRATCH/lssbisp2013/ms_gadget/run4/00000%d-01536-%.1f-wig/' % (
+    opts['basepath'] = os.path.expandvars('$SCRATCH/lss/ms_gadget/run4/00000%d-01536-%.1f-wig/' % (
         opts['sim_seed'], opts['boxsize']))
     
     # Get deltalin at internal_scale_factor_for_weights, shift it by Psi(out_scale_factor),
@@ -155,6 +155,19 @@ def main():
             'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0}, # 'kmax': opts['kmax']},
             'calc_quadratic_field': 'tidal_G2'
             })
+
+    if True:
+        # shift the shift term Psi.nabla delta
+        opts['densities_to_shift'].append({
+            'id_for_out_fname': 'IC_LinearMesh_PsiNablaDelta',
+            'in_fname': os.path.join(
+                opts['basepath'], 'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
+            'file_scale_factor': 1.0,
+            'external_smoothing': None, # external smoothingn of delta^2(x)
+            'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0}, # 'kmax': opts['kmax']},
+            'calc_quadratic_field': 'PsiNablaDelta'
+            })
+
     if False:
         # shift the field 1 (this gives delta_ZA)
         opts['densities_to_shift'].append({
@@ -165,7 +178,7 @@ def main():
             'external_smoothing': None,
             'calc_trf_of_field': '1'
             })
-    if True:
+    if False:
         # shift deltalin^3
         opts['densities_to_shift'].append({
             'id_for_out_fname': 'IC_LinearMesh_cube-mean',
