@@ -364,10 +364,10 @@ def main():
         if specs_of_density_to_shift.get('calc_quadratic_field',None) is not None:
             # get quadratic field
             rfield_density_to_shift = nbkit03_utils.calc_quadratic_field(
-                base_rfield=rfield_density_to_shift, 
+                base_field_mesh=FieldMesh(rfield_density_to_shift),
                 quadfield=specs_of_density_to_shift['calc_quadratic_field'],
                 smoothing_of_base_field=specs_of_density_to_shift.get('smoothing_quadratic_source',None),
-                return_in_k_space=False, verbose=opts['verbose'])
+                verbose=opts['verbose']).compute(mode='real')
 
             # print info
             nbkit03_utils.rfield_print_info(rfield_density_to_shift, comm, 
