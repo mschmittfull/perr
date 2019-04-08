@@ -26,7 +26,7 @@ from pmesh.pm import ParticleMesh
 
 
 # MS code
-from lsstools import nbkit03_utils
+from lsstools import nbkit03_utils, paint_utils
 
 def main():
 
@@ -458,8 +458,8 @@ def main():
         # ################################################################################
 
         print("%d: paint shifted catalog to grid using mass weights" % comm.rank)
-        out_delta, meshsource_attrs = nbkit03_utils.weighted_paint_cat_to_delta(
-            uni_cat, weight='Mass', weighted_CIC_mode=opts['weighted_CIC_mode'],
+        out_delta, meshsource_attrs = paint_utils.weighted_paint_cat_to_delta(
+            uni_cat, weight='Mass', weighted_paint_mode=opts['weighted_CIC_mode'],
             set_mean=0.0,
             Nmesh=opts['out_Ngrid'], verbose=opts['verbose'],
             to_mesh_kwargs={'window': 'cic', 'compensated': False, 'interlaced': False})
