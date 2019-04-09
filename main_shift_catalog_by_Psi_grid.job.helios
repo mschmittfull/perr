@@ -33,10 +33,10 @@ NgridOut=512
 PsiOrder=1
 
 
-source activate nbodykit-0.3-env
+source activate nbodykit-0.3.7-env
 
 myscript=main_ms_gadget_shift_catalog_by_Psi_grid.py_$(date +%s%N)
-cp main_ms_gadget_shift_catalog_by_Psi_grid.py $myscript
+cp main_shift_catalog_by_Psi_grid.py $myscript
 
 for SimSeed in 400 401 402 403 404
 do
