@@ -5,7 +5,7 @@
 # # number of processors (helios has 28 cores per node; 896 is half cluster)
 # # for Nptcles=NgridOut=512, need few minutes on 28 cores
 # # for Nptcles=1536, need few minutes on 448 cores
-#SBATCH -n 448
+#SBATCH -n 224
 #SBATCH --mem=120GB
 #SBATCH --export=ALL
 #SBATCH -V
@@ -40,7 +40,8 @@ cp main_ms_gadget_shift_catalog_by_Psi_grid.py $myscript
 
 for SimSeed in 400 401 402 403 404
 do
-    srun -n 224 python $myscript $Nptcles $NgridOut --Nmesh=$NmeshInternal --SimSeed=$SimSeed --PsiOrder=$PsiOrder
+	# use 2 threads so here should be half of cores requested by SBATCH -n above
+    srun -n 112 python $myscript $Nptcles $NgridOut --Nmesh=$NmeshInternal --SimSeed=$SimSeed --PsiOrder=$PsiOrder
 done
         
 source deactivate                
