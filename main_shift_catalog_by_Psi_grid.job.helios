@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 # # required time of job
-#SBATCH -t 24:00:00
+#SBATCH -t 02:00:00
 # # number of processors (helios has 28 cores per node; 896 is half cluster)
 # # for Nptcles=NgridOut=512, need few minutes on 28 cores
 # # for Nptcles=1536, need few minutes on 448 cores
@@ -28,7 +28,7 @@ export OMP_NUM_THREADS=2
 
 Nptcles=1536
 NmeshInternal=1536  # should be >=Nptcles
-NgridOut=512
+NgridOut=64
 # 1: Zeldovich, 2: 2LPT
 PsiOrder=1
 
