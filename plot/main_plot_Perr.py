@@ -576,8 +576,8 @@ def main():
                         fitted_Pks = fitted_stacked_pickles[fitspec['name']][(Rsmooth,)]['Pkmeas']
                         ww = np.where( 
                             (kvec>=fitspec['settings']['kmin']) & (kvec<=fitspec['settings']['kmax']))[0]
-                        ymat = (fitted_Pks[(id1,id1)][1] - 2.0*fitted_Pks[(id1,id2)][1] 
-                                + fitted_Pks[(id2,id2)][1]) / my_one_over_nbar
+                        ymat = (fitted_Pks[(id1,id1)].P - 2.0*fitted_Pks[(id1,id2)].P 
+                                + fitted_Pks[(id2,id2)].P) / my_one_over_nbar
                         if True:
                             # no errorbar
                             ax.loglog(kvec[ww], np.mean(ymat,axis=0)[ww],
@@ -1096,8 +1096,8 @@ def main():
                             for fitspec in trf_fcn_fitspecs:
                                 # plot using fitted_stacked_pickles
                                 fitted_Pks = fitted_stacked_pickles[fitspec['name']][(Rsmooth,)]['Pkmeas']
-                                ymat = (1.0 - fitted_Pks[(id1,id2)][1]**2/(
-                                    fitted_Pks[(id1,id1)][1]*fitted_Pks[(id2,id2)][1]))
+                                ymat = (1.0 - fitted_Pks[(id1,id2)].P**2/(
+                                    fitted_Pks[(id1,id1)].P*fitted_Pks[(id2,id2)].P))
                                 ax.loglog(kvec, np.mean(ymat,axis=0),
                                           color=col,
                                           ls=linestyles[tfcounter], label='Fitted %s' % label)
