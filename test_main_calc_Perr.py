@@ -487,7 +487,7 @@ def main(argv):
         pickle_dict_at_R[(R,)] = this_pickle_dict
     
         residual_key = '[hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ]_MINUS_[delta_h]'
-        Perr = this_pickle_dict['Pkmeas'][(residual_key,residual_key)][1]
+        Perr = this_pickle_dict['Pkmeas'][(residual_key,residual_key)].P
         Perr_expected = np.array([
             9965.6,17175.8,22744.4,19472.3,19081.2,19503.4,19564.9,18582.9,19200.1,16911.3,
             16587.4,16931.9,15051.0,13835.1,13683.8,13109.9,12353.5,11900.2,11085.1,11018.4,
