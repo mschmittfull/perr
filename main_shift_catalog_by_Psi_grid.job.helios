@@ -1,10 +1,11 @@
 #!/bin/bash -l
 
 # # required time of job
-#SBATCH -t 02:00:00
+#SBATCH -t 04:00:00
 # # number of processors (helios has 28 cores per node; 896 is half cluster)
 # # for Nptcles=NgridOut=512, need few minutes on 28 cores
 # # for Nptcles=1536, need few minutes on 448 cores
+# # or half an hour on 224 cores
 #SBATCH -n 224
 #SBATCH --mem=120GB
 #SBATCH --export=ALL
@@ -14,7 +15,7 @@
 #SBATCH --output=slurm-%x.o%j
 #SBATCH --error=slurm-%x.e%j
 #SBATCH -J shift
-#SBATCH --dependency=afterany:60705
+# #SBATCH --dependency=afterany:60705
 
 set -x
 
@@ -24,13 +25,15 @@ module load gsl/gcc-4.8.5/2.4
 
 export MPICH_GNI_MBOXES_PER_BLOCK=4096
 export OMP_NUM_THREADS=2
-# (use half of allocated processors below so we can use 2 threads)
+# (can use half of allocated processors below so we can use 2 threads)
 
 Nptcles=1536
 NmeshInternal=1536  # should be >=Nptcles
-NgridOut=64
+NgridOut=512
 # 1: Zeldovich, 2: 2LPT
 PsiOrder=1
+# 0: No RSD, 1: Include RSD
+RSD=1
 
 
 source activate nbodykit-0.3.7-env
@@ -38,10 +41,11 @@ source activate nbodykit-0.3.7-env
 myscript=main_ms_gadget_shift_catalog_by_Psi_grid.py_$(date +%s%N)
 cp main_shift_catalog_by_Psi_grid.py $myscript
 
-for SimSeed in 400 401 402 403 404
+#for SimSeed in 400 401 402 403 404
+for SimSeed in 400 403
 do
 	# use 2 threads so here should be half of cores requested by SBATCH -n above
-    srun -n 112 python $myscript $Nptcles $NgridOut --Nmesh=$NmeshInternal --SimSeed=$SimSeed --PsiOrder=$PsiOrder
+    srun -n 112 python $myscript $Nptcles $NgridOut --Nmesh=$NmeshInternal --SimSeed=$SimSeed --PsiOrder=$PsiOrder --RSD=$RSD
 done
         
 source deactivate                

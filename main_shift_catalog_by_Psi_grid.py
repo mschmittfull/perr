@@ -1,18 +1,5 @@
-#!/usr/bin/env python
-# #!/home/mschmittfull/anaconda2/envs/nbodykit-0.3-env/bin/python
-
-# NOTE: We load nbodykit-0.3 environment above, so can call with ./main_test_nbkit0.3py.
-# Better: Use run.sh script.
-
 # Should make sure that PYTHONPATH="".
-
-# Run with
-#   ./main_test_nbkit0.3.py
-# or
-#   ./run.sh main_test_nbkit0.3py
-# but NOT with
-#   python main_test_nbkit0.3.py
-
+# And load environment with nbodykit 0.3, e.g. using run.sh script.
 
 from __future__ import print_function,division
 
@@ -24,34 +11,29 @@ from argparse import ArgumentParser
 from collections import OrderedDict
 from pmesh.pm import ParticleMesh
 
-
 # MS code
 from lsstools import nbkit03_utils, paint_utils
+from lsstools.cosmo_model import CosmoModel
+from lsstools.gen_cosmo_fcns import calc_f_log_growth_rate,generate_calc_Da
+
+
 
 def main():
 
     """
-    5 April 2018: Not finished, b/c would need a parallel version of RegularGridInterpolator.
-    Actually finished later?
-
     Do the following: 
-    1) Read particle positions of a catalog
-    2) Interpolate displacement Psi defined on a grid to particle positions
-    3) Shift (displace) particles by Psi
-    4) Save shifted catalog
+    - create uniform catalog
+    - load deltalin or other density delta on grid
+    - weigh ptcles in uniform catalog by 1+delta
+    - compute smoothed Psi_lin on grid (interpolating to ptcle positions)
+    - shift (displace) particles by Psi
+    - save shifted catalog
 
     Example:
     ./run.sh mpiexec -n 3 python main_ms_gadget_shift_catalog_by_Psi_grid.py 64 64
     """
-    # TODO (already done?): 
-    # - create uniform catalog
-    # - load deltalin on grid
-    # - weigh ptcles in uniform catalog by 1+delta_lin
-    # - compute smoothed Psi_lin on grid
-    # - call shift_catalog to displace uniform catalog 
 
     opts = OrderedDict()
-
 
     # command line args
     ap = ArgumentParser()
@@ -71,6 +53,8 @@ def main():
     ap.add_argument('-v', '--verbose', action="store_const", dest="verbose", 
                         const=1, default=0,
                         help="run in 'verbose' mode, with increased logging output")
+    ap.add_argument('--RSD', type=int, default=0, 
+        help="0: No RSD, 1: Include RSD by displacing by Psi(q)+f (\e_LOS.\vPsi(q)) \e_LOS, where e_LOS is unit vector in line of sight direction.")
 
     
     # copy args
@@ -80,6 +64,9 @@ def main():
     #opts['plot_slices'] = cmd_args.plot_slices
     opts['sim_seed'] = cmd_args.SimSeed
     opts['PsiOrder'] = cmd_args.PsiOrder
+    opts['RSD'] = bool(cmd_args.RSD)
+    opts['RSD_line_of_sight'] = [0,0,1]
+
     opts['verbose'] = cmd_args.verbose
     if cmd_args.Nmesh == 0:
         opts['Nmesh'] = opts['Nptcles_per_dim']
@@ -124,7 +111,7 @@ def main():
     
     ## densities to shift
     opts['densities_to_shift'] = []
-    if False:
+    if True:
         # shift delta_lin
         opts['densities_to_shift'].append({
             'id_for_out_fname': 'IC_LinearMesh',
@@ -133,7 +120,7 @@ def main():
             'file_scale_factor': 1.0,
             'external_smoothing': None
             })
-    if False:
+    if True:
         # shift delta_lin^2-<delta_lin^2>
         opts['densities_to_shift'].append({
             'id_for_out_fname': 'IC_LinearMesh_growth-mean',
@@ -144,7 +131,7 @@ def main():
             'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
             'calc_quadratic_field': 'growth-mean'
             })
-    if False:
+    if True:
         # shift G2[delta_lin]
         opts['densities_to_shift'].append({
             'id_for_out_fname': 'IC_LinearMesh_tidal_G2',
@@ -168,7 +155,7 @@ def main():
             'calc_quadratic_field': 'PsiNablaDelta'
             })
 
-    if False:
+    if True:
         # shift the field 1 (this gives delta_ZA)
         opts['densities_to_shift'].append({
             'id_for_out_fname': '1',
@@ -178,7 +165,7 @@ def main():
             'external_smoothing': None,
             'calc_trf_of_field': '1'
             })
-    if False:
+    if True:
         # shift deltalin^3
         opts['densities_to_shift'].append({
             'id_for_out_fname': 'IC_LinearMesh_cube-mean',
@@ -248,6 +235,15 @@ def main():
         opts['cosmo_params'] = dict(Om_m=0.307494, Om_L=1.0-0.307494, Om_K=0.0,
                                     Om_r=0.0, h0=0.6774)
 
+    if opts['RSD']:
+        # calculate f
+        cosmo = CosmoModel(**opts['cosmo_params'])
+        calc_Da = generate_calc_Da(cosmo=cosmo)
+        f_log_growth = calc_f_log_growth_rate(a=opts['out_scale_factor'], 
+            calc_Da=calc_Da, cosmo=cosmo, do_test=True)
+        # save in opts so we can easily access it throughout code (although strictly 
+        # speaking it is not a free option but derived from cosmo_params)
+        opts['f_log_growth'] = f_log_growth
 
 
 
@@ -383,7 +379,7 @@ def main():
                                 str(specs_of_density_to_shift['calc_trf_of_field']))
             
         if specs_of_density_to_shift['external_smoothing'] is not None:
-            raise Exception("todo3")
+            raise Exception("todo")
 
         # print("%d: rfield_density_to_shift: type=%s, shape=%s, rms=%g"% (
         #     comm.rank, str(type(rfield_density_to_shift)), str(rfield_density_to_shift.shape),
@@ -437,11 +433,14 @@ def main():
             if comm.rank==0:
                 print("%d: Get Psi_%d: " %(comm.rank,direction))
 
-            # TMP: MULTIPLY BY 0 to get 0 displacement
-            Psi_rfields[direction] = 1.0 * nbkit03_utils.get_displacement_from_density_rfield(
+            # Compute displacement
+            Psi_rfields[direction] = nbkit03_utils.get_displacement_from_density_rfield(
                 rfield_displacement_source, component=direction, 
                 Psi_type=opts['displacement_source']['Psi_type'],
-                smoothing=opts['displacement_source']['smoothing'])
+                smoothing=opts['displacement_source']['smoothing'],
+                RSD=opts['RSD'], RSD_line_of_sight=opts['RSD_line_of_sight'],
+                RSD_f_log_growth=opts['f_log_growth']
+                )
 
         # Shift uniform catalog particles by Psi (changes uni_cat)
         nbkit03_utils.shift_catalog_by_psi_grid(
@@ -501,7 +500,21 @@ def main():
             print("outmesh.attrs:\n", outmesh.attrs)
 
         # save to bigfile
-        out_fname = os.path.join(opts['basepath'], '%s_int%s_ext%s_SHIFTEDBY_%s%s_a%.4f_Np%d_Nm%d_Ng%d_CIC%s' % (
+        if not opts['RSD']:
+            RSDstring = ''
+        else:
+            if opts['RSD_line_of_sight'] in [[0,0,1],[0,1,0],[1,0,0]]:
+                RSDstring = '_RSD%d%d%d' % (
+                    opts['RSD_line_of_sight'][0], opts['RSD_line_of_sight'][1],
+                    opts['RSD_line_of_sight'][2])
+            else:
+                # actually not implemented above
+                RSDstring = '_RSD_%.2f_%.2f_%.2f.hdf5' % (
+                    opts['RSD_line_of_sight'][0], opts['RSD_line_of_sight'][1],
+                    opts['RSD_line_of_sight'][2])
+
+        out_fname = os.path.join(opts['basepath'], 
+            '%s_int%s_ext%s_SHIFTEDBY_%s%s_a%.4f_Np%d_Nm%d_Ng%d_CIC%s%s' % (
             specs_of_density_to_shift['id_for_out_fname'],
             smoothing_str(specs_of_density_to_shift.get('smoothing_quadratic_source',None)),
             smoothing_str(specs_of_density_to_shift['external_smoothing']),
@@ -511,7 +524,8 @@ def main():
             opts['Nptcles_per_dim'],
             opts['Nmesh'],
             opts['out_Ngrid'],
-            opts['weighted_CIC_mode']
+            opts['weighted_CIC_mode'],
+            RSDstring
             ))
 
         if comm.rank==0:
