@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-#
-# Python script for CMB lensing.
-#
-# Marcel Schmittfull 2016 (marcel-sl@gmx.de).
-#
 from __future__ import print_function,division
 
 import numpy as np

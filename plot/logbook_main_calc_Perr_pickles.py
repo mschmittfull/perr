@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Log book of pickles saved to disk
 """
