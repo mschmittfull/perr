@@ -59,7 +59,7 @@ echo "$0: Activated virtualenv $envname"
 "$@"
 
 # change environment back
-source deactivate
+conda deactivate
 echo "$0: Deactivated virtualenv $envname"
 
 if [ "$MS_HOST" == "helios" ]
