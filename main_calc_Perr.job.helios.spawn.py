@@ -1,4 +1,4 @@
-from __future__ import print_function,division
+from __future__ import print_function, division
 import os
 
 
@@ -23,20 +23,20 @@ def main():
     halo_mass_strings = ['10.8_11.8']
     #halo_mass_strings = ['11.8_12.8', '12.8_13.8', '13.8_15.1']
     #halo_mass_strings = ['13.8_15.1']
-    
+
     ## RUN SCRIPT
     send_mail = True
     for halo_mass_string in halo_mass_strings:
         for sim_seed in sim_seeds:
             job_fname = 'main_calc_Perr.job.helios_%s_%s_%d' % (
-                tryid,halo_mass_string,sim_seed)
+                tryid, halo_mass_string, sim_seed)
             if send_mail:
                 mail_string1 = '#SBATCH --mail-user=mschmittfull@gmail.com'
                 mail_string2 = '#SBATCH --mail-type=ALL'
             else:
                 mail_string1 = ''
                 mail_string2 = ''
-            
+
             f = open(job_fname, "w")
             f.write("""#!/bin/bash -l
 
@@ -62,21 +62,20 @@ export OMP_NUM_THREADS=1
 ./run.sh python %s "{'sim_seed': %d, 'halo_mass_string': '%s'}"
 
 #source deactivate
-            """ % (mail_string1, mail_string2,
-                   tryid, halo_mass_string, sim_seed,
-                   binfile, sim_seed, halo_mass_string))
-        
+            """ % (mail_string1, mail_string2, tryid, halo_mass_string,
+                   sim_seed, binfile, sim_seed, halo_mass_string))
+
             f.close()
             print("Wrote %s" % job_fname)
 
             if do_submit:
-                print("Submit %s"%job_fname)
+                print("Submit %s" % job_fname)
                 os.system("sbatch %s" % job_fname)
                 print("Sleep...")
                 os.system("sleep 3")
             # do not send more than 1 email
             send_mail = False
-                
+
+
 if __name__ == '__main__':
     main()
-    
