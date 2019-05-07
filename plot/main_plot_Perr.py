@@ -1,29 +1,27 @@
 from __future__ import print_function,division
 
+from collections import OrderedDict
 import cPickle
+import glob
+from matplotlib import rc
+from matplotlib import rcParams
+from matplotlib import spines
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib.ticker import MultipleLocator, MaxNLocator
 import numpy as np
 import os
-from collections import OrderedDict
-from matplotlib import rcParams
-from matplotlib import rc
-from matplotlib import spines
-from matplotlib.ticker import MultipleLocator, MaxNLocator
+import random
+import re
 from scipy import interpolate as interp
 from scipy.io import savemat
-import re
-import random
-import glob
 import sys
 import ujson
 
-# MS packages
 import constants
-#import fit_trf_fcns
 import logbook_main_calc_Perr_pickles
-from lsstools import Pickler
-from lsstools.pickle_utils import pickle_utils
+from lsstools.pickle_utils.io import Pickler
+from lsstools.pickle_utils import retrieve_pickles
 from perr.path_utils import get_in_path
 
 
@@ -332,7 +330,7 @@ def main():
 
         # get stacked pickles for each entry of varyparams
         stacked_vp_pickles, base_vp_pickles, base_vp_pickles_flat_opts = (
-            pickle_utils.get_stacked_pickles_for_varying_base_opts(
+            retrieve_pickles.get_stacked_pickles_for_varying_base_opts(
                 stack_key='sim_seed', stack_values=sim_seeds,
                 base_param_names_and_values=varyparams.keys(),
                 **default_stack_and_vary_kwargs))
@@ -875,7 +873,7 @@ def main():
 
         # get stacked pickles for each entry of varyparams
         stacked_vp_pickles, base_vp_pickles, base_vp_pickles_flat_opts = (
-            pickle_utils.get_stacked_pickles_for_varying_base_opts(
+            retrieve_pickles.get_stacked_pickles_for_varying_base_opts(
                 stack_key='sim_seed', stack_values=sim_seeds,
                 base_param_names_and_values=varyparams.keys(),
                 **default_stack_and_vary_kwargs))
@@ -1441,7 +1439,7 @@ def plot_DM_model_error(ax, plt_type, plot_opts, pickle_path,
             return_base_pickle_opts=True)
 
         # get stacked pickles
-        DMerror_stacked_pickles, base_pickle, base_pickle_flat_opts = pickle_utils.get_stacked_pickles(
+        DMerror_stacked_pickles, base_pickle, base_pickle_flat_opts = retrieve_pickles.get_stacked_pickles(
             vary_key="('stage0', 'sim_seed')", vary_values=sim_seeds,
             **default_stack_kwargs)
 

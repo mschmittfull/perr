@@ -11,10 +11,10 @@ import ujson
 
 # MS packages
 from lsstools import combine_source_fields_to_match_target as combine_source_fields
-from lsstools import Pickler
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
-from lsstools.TrfSpec import TrfSpec, TargetSpec
+from lsstools.pickle_utils.io import Pickler
+from lsstools.model_spec import TrfSpec, TargetSpec
 import path_utils
 
 
@@ -1749,7 +1749,7 @@ def main(argv):
     # Init Pickler instance to save pickle later (this will init pickle fname)
     pickler = None
     if comm.rank == 0:
-        pickler = Pickler.Pickler(path=paths['pickle_path'], base_fname='main_calc_Perr',
+        pickler = Pickler(path=paths['pickle_path'], base_fname='main_calc_Perr',
                                   file_format=opts['pickle_file_format'],
                                   rand_sleep=(opts['Ngrid']>128))
         print("Pickler: ", pickler.full_fname)
