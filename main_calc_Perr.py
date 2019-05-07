@@ -9,7 +9,8 @@ import sys
 # needed to save/load TrfSpec objects in pickle files.
 import ujson
 
-from lsstools import combine_fields_to_match_target
+from lsstools import combine_fields_to_match_target as combine_fields
+from lsstools import parameters
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
 from lsstools.model_spec import TrfSpec, TargetSpec
@@ -406,18 +407,6 @@ def main(argv):
                             0.0
                         }
 
-        if False:
-            # shift grids manually here in code (not implemented)
-            opts['shifted_ext_grids'] = OrderedDict()
-            opts['shifted_ext_grids']['deltalin_SHIFTEDBY_deltalin'] = {
-                'grid_to_shift': 'deltalin',
-                'grid_to_shift_smoothing': None,
-                'displacement_source': 'deltalin',  # compute zeldovich of this
-                'displacement_source_smoothing': {
-                    'mode': 'Gaussian',
-                    'R': 10.0
-                }
-            }
 
     # ######################################################################
     # Catalogs to read
@@ -2188,7 +2177,7 @@ def main(argv):
 
     ## what do to plot/save
     opts['keep_pickle'] = False
-    opts['pickle_file_format'] = 'pickle'
+    opts['pickle_file_format'] = 'dill'
     # plot using plotting code for single realization; difft from code plotting avg
     do_plot = False
     # save grids for slice plots and scatter plots
@@ -2347,19 +2336,65 @@ def main(argv):
     opts['densities_needed_for_trf_fcns'] = densities_needed_for_trf_fcns
     print("densities_needed_for_trf_fcns:", densities_needed_for_trf_fcns)
 
-    # #################################################################################
+    # ##########################################################################
     # loop over smoothing scales
-    # #################################################################################
+    # ##########################################################################
+
+    # Bunch parameters together to simplify arguments
+    grid_opts = parameters.GridOpts(
+        Ngrid=opts['Ngrid'], kmax=opts['kmax'],
+        grid_ptcle2grid_deconvolution=opts['grid_ptcle2grid_deconvolution'])
+
+    sim_opts = parameters.SimOpts(
+        boxsize=opts['boxsize'], 
+        f_log_growth=opts.get('f_log_growth', None),
+        sim_scale_factor=opts['sim_scale_factor'],
+        cosmo_params=opts['cosmo_params'],
+        ssseed=opts['ssseed']
+        )
+
+    power_opts = parameters.PowerOpts(
+        k_bin_width=opts['k_bin_width'],
+        Pk_1d_2d_mode=opts.get('Pk_1d_2d_mode', '1d'),
+        RSD_poles=opts.get('RSD_poles', None),
+        RSD_Nmu=opts.get('RSD_Nmu', None),
+        RSD_los=opts.get('RSD_los', None),
+        Pk_ptcle2grid_deconvolution=opts['Pk_ptcle2grid_deconvolution']
+        )
 
     pickle_dict_at_R = OrderedDict()
     pickle_dict_at_R['opts'] = opts.copy()
     for R in Rsmooth_lst:
         # actually calculate power spectra
         print("\n\nRun with R=", R)
-        tmp_opts = opts.copy()
-        tmp_opts['Rsmooth_for_quadratic_sources'] = R
-        this_pickle_dict = combine_fields_to_match_target.actually_calc_Pks(
-            tmp_opts, paths)
+
+        trf_fcn_opts = parameters.TrfFcnOpts(
+            Rsmooth_for_quadratic_sources=R,
+            Rsmooth_for_quadratic_sources2=(
+                opts['Rsmooth_for_quadratic_sources2']),
+            N_ortho_iter=opts['N_ortho_iter_for_trf_fcns'],
+            orth_method=opts['orth_method_for_trf_fcns'],
+            interp_kind=opts['interp_kind_for_trf_fcns']
+            )
+
+        this_pickle_dict = combine_fields.paint_combine_and_calc_power(
+            trf_specs=opts['trf_specs'],
+            paths=paths,
+            catalogs=opts['cats'], 
+            needed_densities=opts['densities_needed_for_trf_fcns'],
+            ext_grids_to_load=opts['ext_grids_to_load'],
+            trf_fcn_opts=trf_fcn_opts,
+            grid_opts=grid_opts,
+            sim_opts=sim_opts,
+            power_opts=power_opts,
+            save_grids4plots=opts['save_grids4plots'],
+            grids4plots_R=opts['grids4plots_R'],
+            Pkmeas_helper_columns=opts['Pkmeas_helper_columns']
+            )
+            
+
+
+
         pickle_dict_at_R[(R,)] = this_pickle_dict
 
         # save all resutls to pickle
