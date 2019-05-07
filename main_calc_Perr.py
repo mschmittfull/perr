@@ -9,12 +9,11 @@ import sys
 # needed to save/load TrfSpec objects in pickle files.
 import ujson
 
-# MS packages
-from lsstools import combine_source_fields_to_match_target as combine_source_fields
+from lsstools import combine_fields_to_match_target
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
-from lsstools.pickle_utils.io import Pickler
 from lsstools.model_spec import TrfSpec, TargetSpec
+from lsstools.pickle_utils.io import Pickler
 import path_utils
 
 
@@ -2359,7 +2358,7 @@ def main(argv):
         print("\n\nRun with R=", R)
         tmp_opts = opts.copy()
         tmp_opts['Rsmooth_for_quadratic_sources'] = R
-        this_pickle_dict = combine_source_fields.actually_calc_Pks(
+        this_pickle_dict = combine_fields_to_match_target.actually_calc_Pks(
             tmp_opts, paths)
         pickle_dict_at_R[(R,)] = this_pickle_dict
 
