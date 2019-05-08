@@ -24,14 +24,12 @@ def get_densities_needed_for_trf_fcns(trf_specs):
         if trf_spec.hasattr('fixed_linear_sources'):
             needed.update(set(trf_spec.fixed_linear_sources))
 
-        # field_to_smoothen_and_square for quadratic fields
-        if trf_spec.field_to_smoothen_and_square is not None:
-            needed.add(trf_spec.field_to_smoothen_and_square)
-        if trf_spec.field_to_smoothen_and_square2 is not None:
-            needed.add(trf_spec.field_to_smoothen_and_square2)
-
-        # target field
-        needed.add(trf_spec.target_field)
+        # field_to_smoothen_and_square for quadratic fields, and target field
+        for f in [trf_spec.field_to_smoothen_and_square,
+                  trf_spec.field_to_smoothen_and_square2,
+                  target_field]:
+            if f is not None:
+                needed.add(f)
 
         # fields contributing to target
         if hasattr(trf_spec, 'target_spec'):
