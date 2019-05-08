@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 
+
 def get_densities_needed_for_trf_fcns(trf_specs):
     """Get list of all densities actually needed for trf fcns.
 
@@ -39,3 +40,24 @@ def get_densities_needed_for_trf_fcns(trf_specs):
                 if tc not in densities_needed_for_trf_fcns:
                     densities_needed_for_trf_fcns.append(tc)
     return densities_needed_for_trf_fcns
+
+def make_cache_path(cache_base_path, comm):
+    """
+    Unique id for cached files so we can run multiple instances simultaneously.
+    Rank 0 gets the cache id and then broadcasts it to other ranks
+    """
+    cacheid = None
+    if comm.rank == 0:
+        file_exists = True
+        while file_exists:
+            cacheid = ('CACHE%06x' % random.randrange(16**6)).upper()
+            cache_path = os.path.join(cache_base_path, cacheid)
+            file_exists = (len(glob.glob(cache_path)) > 0)
+        # create cache path
+        if not os.path.exists(cache_path):
+            os.makedirs(cache_path)
+    # broadcast cacheid to all ranks
+    cacheid = comm.bcast(cacheid, root=0)
+    # get cache path on all ranks
+    cache_path = os.path.join(cache_base_path, cacheid)
+    return cache_path

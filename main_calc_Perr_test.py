@@ -516,26 +516,7 @@ def main(argv):
             os.makedirs(paths['grids4plots_path'])
         print("grids4plots_path:", paths['grids4plots_path'])
 
-    # unique id for cached files so we can run multiple instances at the same time
-    # rank0 gets the cache id and then broadcasts it to other ranks
-
-    cacheid = None
-    if comm.rank == 0:
-        file_exists = True
-        while file_exists:
-            cacheid = ('CACHE%06x' % random.randrange(16**6)).upper()
-            paths['cache_path'] = os.path.join(paths['cache_base_path'],
-                                               cacheid)
-            file_exists = (len(glob.glob(paths['cache_path'])) > 0)
-        # create cache path
-        if not os.path.exists(paths['cache_path']):
-            #os.system('mkdir -p %s' % paths['cache_path'])
-            os.makedirs(paths['cache_path'])
-        logger.info('cacheid: %s' % cacheid)
-
-    # broadcast to all ranks
-    cacheid = comm.bcast(cacheid, root=0)
-    paths['cache_path'] = os.path.join(paths['cache_base_path'], cacheid)
+    paths['cache_path'] = utils.make_cache_path(opts['cache_base_path'], comm)
 
     # Check some params
     if ((opts['grid_ptcle2grid_deconvolution'] is not None)
