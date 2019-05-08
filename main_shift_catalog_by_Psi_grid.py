@@ -1,17 +1,12 @@
-# Should make sure that PYTHONPATH="".
-# And load environment with nbodykit 0.3, e.g. using run.sh script.
-
 from __future__ import print_function, division
-
+from argparse import ArgumentParser
+from collections import OrderedDict
 from nbodykit.lab import *
 import numpy as np
 import os
-from shutil import rmtree
-from argparse import ArgumentParser
-from collections import OrderedDict
 from pmesh.pm import ParticleMesh
+from shutil import rmtree
 
-# MS code
 from lsstools import nbkit03_utils, paint_utils
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import calc_f_log_growth_rate, generate_calc_Da
@@ -29,6 +24,9 @@ def main():
 
     Example:
     ./run.sh mpiexec -n 3 python main_ms_gadget_shift_catalog_by_Psi_grid.py 64 64
+
+    Should make sure that PYTHONPATH="".
+    And load environment with nbodykit 0.3, e.g. using run.sh script.
     """
 
     # command line args

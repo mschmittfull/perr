@@ -1,4 +1,5 @@
 from __future__ import print_function, division
+from argparse import ArgumentParser
 from collections import OrderedDict, namedtuple, Counter
 import cPickle
 import numpy as np
@@ -14,7 +15,7 @@ from lsstools.pickle_utils.io import Pickler
 import path_utils
 import utils
 
-def main(argv):
+def main():
     """
     Combine source fields to get proxy of a target field. This is stage 0 of reconstruction,
     and can be used to quantify Perror of a bias model.
@@ -26,9 +27,9 @@ def main(argv):
       - Combine different mass-weighted delta_h fields to get proxy of target=delta_m.
 
     Run using 
-      ./run.sh python main_calc_Perr.py
+      ./run.sh python main_calc_Perr_test.py
     or 
-      ./run.sh mpiexec -n 2 python main_calc_Perr.py
+      ./run.sh mpiexec -n 2 python main_calc_Perr_test.py
     """
 
     #####################################
@@ -36,6 +37,7 @@ def main(argv):
     #####################################
     # command line args
     ap = ArgumentParser()
+
     ap.add_argument('--SimSeed',
                     type=int,
                     default=403,
@@ -47,63 +49,45 @@ def main(argv):
 
     cmd_args = ap.parse_args()
 
-
-    # # parse args
-    # opts_update_dict = {}
-    # if len(argv) == 1:
-    #     pass
-    # elif len(argv) == 2:
-    #     # Update options given as 1st arg
-    #     # e.g. python test_main_calc_Perr.py "{'Rsmooth_for_quadratic_sources': 10.0}"
-    #     import ast
-    #     opts_update_dict = ast.literal_eval(argv[1])
-    #     print("UPDATE OPTS:", opts_update_dict)
-    #     if 'sim_scale_factor' in opts_update_dict.keys():
-    #         raise Exception(
-    #             "sim_scale_factor must not be changed via argument b/c screws up dependent options"
-    #         )
-    # else:
-    #     raise Exception("May use only 1 argument")
-
     #####################################
     # OPTIONS
     #####################################
 
     opts = OrderedDict()
 
-    opts['main_calc_Perr_test_version'] = '1.3'
-
+    # Bump this when changing code without changing options. Otherwise pickle
+    # loading might wrongly read old pickles.
+    opts['main_calc_Perr_test_version'] = '1.4'
 
     # ######################################################################
     # Analysis options
     # ######################################################################
 
-
     # Simulation options. Will be used by path_utils to get input path, and
     # to compute deltalin at the right redshift.
     seed = cmd_args.SimSeed
-    sim_opts = parameters.load_sim_opts(
+    opts['sim_opts'] = parameters.SimOpts.load_default_opts(
         sim_name='ms_gadget_test_data',
         sim_seed=seed,
         ssseed=40000+seed,
         halo_mass_string=cmd_args.HaloMassString)
 
+    # Grid options.
     Ngrid = 64
-    grid_opts = parameters.GridOpts(
+    opts['grid_opts'] = parameters.GridOpts(
         Ngrid=Ngrid,
-        kmax=2.0*np.pi/sim_opts.boxsize*float(Ngrid) / 2.0,
+        kmax=2.0*np.pi/opts['sim_opts'].boxsize * float(Ngrid)/2.0,
         grid_ptcle2grid_deconvolution=None
         )
 
-    # Use default options for measuring power spectrum.
-    power_opts = parameters.PowerOpts()
-
-
+    # Options for measuring power spectrum. Use defaults.
+    opts['power_opts'] = parameters.PowerOpts()
 
     # ######################################################################
     # External grids to read
     # ######################################################################
 
+    assert opts['sim_opts'].sim_name.startswith('ms_gadget')
     # linear density (ICs of the sims)
     opts['ext_grids_to_load'] = OrderedDict()
     if True:
@@ -123,8 +107,7 @@ def main(argv):
             'dir': 'IC_PtcleDensity_Ng%d' % opts['Ngrid'],
             'file_format': 'nbkit_BigFileGrid',
             'dataset_name': 'Field',
-            'scale_factor':
-            1.0 / (1.0 + 99.0),  # ICs were generated at z=99
+            'scale_factor': 1.0 / (1.0 + 99.0),  # ICs were generated at z=99
             'nbkit_normalize': True,
             'nbkit_setMean': 0.0
         }
@@ -627,4 +610,4 @@ def calc_Perr(opts, power_opts):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    main()
