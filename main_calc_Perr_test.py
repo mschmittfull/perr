@@ -7,14 +7,13 @@ import os
 import random
 import sys
 
-# MS packages
 from lsstools import combine_fields_to_match_target
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
-from lsstools.pickle_utils.io import Pickler
 from lsstools.model_spec import TrfSpec, TargetSpec
+from lsstools.pickle_utils.io import Pickler
 import path_utils
-
+import utils
 
 def main(argv):
     """
@@ -59,7 +58,7 @@ def main(argv):
 
     opts = OrderedDict()
 
-    opts['test_main_calc_Perr_version'] = '1.2'
+    opts['main_calc_Perr_test_version'] = '1.3'
 
     ## ANALYSIS
     opts['Ngrid'] = 64
@@ -545,38 +544,39 @@ def main(argv):
             "Must not simultaneously apply ptcle2grid deconvolution to grid and Pk."
         )
 
-    # list of all densities actually needed for trf fcns
-    densities_needed_for_trf_fcns = []
-    for trf_spec in opts['trf_specs']:
-        for linsource in trf_spec.linear_sources:
-            if linsource not in densities_needed_for_trf_fcns:
-                densities_needed_for_trf_fcns.append(linsource)
-        #densities_needed_for_trf_fcns += trf_spec.linear_sources
-        for fixedlinsource in getattr(trf_spec, 'fixed_linear_sources', []):
-            if fixedlinsource not in densities_needed_for_trf_fcns:
-                densities_needed_for_trf_fcns.append(fixedlinsource)
-
-        if trf_spec.field_to_smoothen_and_square is not None:
-            if trf_spec.field_to_smoothen_and_square not in densities_needed_for_trf_fcns:
-                densities_needed_for_trf_fcns.append(
-                    trf_spec.field_to_smoothen_and_square)
-        if trf_spec.field_to_smoothen_and_square2 is not None:
-            if trf_spec.field_to_smoothen_and_square2 not in densities_needed_for_trf_fcns:
-                densities_needed_for_trf_fcns.append(
-                    trf_spec.field_to_smoothen_and_square2)
-        if trf_spec.target_field not in densities_needed_for_trf_fcns:
-            densities_needed_for_trf_fcns.append(trf_spec.target_field)
-        if hasattr(trf_spec, 'target_spec'):
-            for tc in getattr(trf_spec.target_spec, 'linear_target_contris',
-                              []):
-                if tc not in densities_needed_for_trf_fcns:
-                    densities_needed_for_trf_fcns.append(tc)
+    # Get list of all densities actually needed for trf fcns.
+    densities_needed_for_trf_fcns = utils.get_densities_needed_for_trf_fcns(
+        opts['trf_specs'])
     opts['densities_needed_for_trf_fcns'] = densities_needed_for_trf_fcns
-    print("densities_needed_for_trf_fcns:", densities_needed_for_trf_fcns)
 
-    # #################################################################################
+    # ##########################################################################
+    # Bunch parameters together to simplify arguments
+    # ##########################################################################
+
+    grid_opts = parameters.GridOpts(
+        Ngrid=opts['Ngrid'], kmax=opts['kmax'],
+        grid_ptcle2grid_deconvolution=opts['grid_ptcle2grid_deconvolution'])
+
+    sim_opts = parameters.SimOpts(
+        boxsize=opts['boxsize'], 
+        f_log_growth=opts.get('f_log_growth', None),
+        sim_scale_factor=opts['sim_scale_factor'],
+        cosmo_params=opts['cosmo_params'],
+        ssseed=opts['ssseed']
+        )
+
+    power_opts = parameters.PowerOpts(
+        k_bin_width=opts['k_bin_width'],
+        Pk_1d_2d_mode=opts.get('Pk_1d_2d_mode', '1d'),
+        RSD_poles=opts.get('RSD_poles', None),
+        RSD_Nmu=opts.get('RSD_Nmu', None),
+        RSD_los=opts.get('RSD_los', None),
+        Pk_ptcle2grid_deconvolution=opts['Pk_ptcle2grid_deconvolution']
+        )
+
+    # ##########################################################################
     # loop over smoothing scales
-    # #################################################################################
+    # ##########################################################################
 
     pickle_dict_at_R = OrderedDict()
     pickle_dict_at_R['opts'] = opts.copy()

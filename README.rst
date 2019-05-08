@@ -53,7 +53,7 @@ Example usage
 Modifying options
 -----------------
 
-- In the code: The main code is in file main_calc_Perr.py. This contains examples for different simulations and halo bias models, and can be modified for new applications (perhaps make a copy and modify that). For a more minimal run script, see test_main_calc_Perr.py. 
+- In the code: The main code is in file main_calc_Perr.py. This contains examples for different simulations and halo bias models, and can be modified for new applications (perhaps make a copy and modify that). For a more minimal run script, see main_calc_Perr_test.py. 
 
 - On the command line: Options can also be changed on the command line by supplying a single string argument which contains a dictionary with options that overwrite the default options in the file. For example:
 
@@ -79,7 +79,7 @@ To test if the installation was successful, run
 
 .. code-block:: bash
 
-  $ python test_main_calc_Perr.py
+  $ python main_calc_Perr_test.py
 
 and look for 'TEST Perr: OK' at the end.
 
