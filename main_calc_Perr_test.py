@@ -34,22 +34,36 @@ def main(argv):
     #####################################
     # PARSE COMMAND LINE ARGS
     #####################################
-    # parse args
-    opts_update_dict = {}
-    if len(argv) == 1:
-        pass
-    elif len(argv) == 2:
-        # Update options given as 1st arg
-        # e.g. python test_main_calc_Perr.py "{'Rsmooth_for_quadratic_sources': 10.0}"
-        import ast
-        opts_update_dict = ast.literal_eval(argv[1])
-        print("UPDATE OPTS:", opts_update_dict)
-        if 'sim_scale_factor' in opts_update_dict.keys():
-            raise Exception(
-                "sim_scale_factor must not be changed via argument b/c screws up dependent options"
-            )
-    else:
-        raise Exception("May use only 1 argument")
+    # command line args
+    ap = ArgumentParser()
+    ap.add_argument('--SimSeed',
+                    type=int,
+                    default=403,
+                    help='Simulation seed to load.')
+
+    ap.add_argument('--HaloMassString',
+                    default='13.8_15.1',
+                    help="Halo mass string, for example '13.8_15.1'.")
+
+    cmd_args = ap.parse_args()
+
+
+    # # parse args
+    # opts_update_dict = {}
+    # if len(argv) == 1:
+    #     pass
+    # elif len(argv) == 2:
+    #     # Update options given as 1st arg
+    #     # e.g. python test_main_calc_Perr.py "{'Rsmooth_for_quadratic_sources': 10.0}"
+    #     import ast
+    #     opts_update_dict = ast.literal_eval(argv[1])
+    #     print("UPDATE OPTS:", opts_update_dict)
+    #     if 'sim_scale_factor' in opts_update_dict.keys():
+    #         raise Exception(
+    #             "sim_scale_factor must not be changed via argument b/c screws up dependent options"
+    #         )
+    # else:
+    #     raise Exception("May use only 1 argument")
 
     #####################################
     # OPTIONS
@@ -59,154 +73,200 @@ def main(argv):
 
     opts['main_calc_Perr_test_version'] = '1.3'
 
-    ## ANALYSIS
-    opts['Ngrid'] = 64
 
-    # k bin width for power spectra, in units of k_f=2pi/L. Must be >=1.0. Choose 1.,2.,3. usually.
-    opts['k_bin_width'] = 1.0
+    # ######################################################################
+    # Analysis options
+    # ######################################################################
 
-    ## Path of input catalog. All we need is in_path, which will be obtained using
-    ## path_utils.py. The other options are
-    ## just for convenience when comparing measured power spectra later.
+
+    # Simulation options. Will be used by path_utils to get input path, and
+    # to compute deltalin at the right redshift.
+    seed = cmd_args.SimSeed
+    sim_opts = parameters.load_sim_opts(
+        sim_name='ms_gadget_test_data',
+        sim_seed=seed,
+        ssseed=40000+seed,
+        halo_mass_string=cmd_args.HaloMassString)
+
+    Ngrid = 64
+    grid_opts = parameters.GridOpts(
+        Ngrid=Ngrid,
+        kmax=2.0*np.pi/sim_opts.boxsize*float(Ngrid) / 2.0,
+        grid_ptcle2grid_deconvolution=None
+        )
+
+    # Use default options for measuring power spectrum.
+    power_opts = parameters.PowerOpts()
+
+
+
+    # ######################################################################
+    # External grids to read
+    # ######################################################################
+
+    # linear density (ICs of the sims)
+    opts['ext_grids_to_load'] = OrderedDict()
+    if True:
+        # deltalin from mesh (created on mesh, no particles involved)
+        opts['ext_grids_to_load']['deltalin'] = {
+            'dir': 'IC_LinearMesh_z0_Ng%d' % opts['Ngrid'],
+            'file_format': 'nbkit_BigFileGrid',
+            'dataset_name': 'Field',
+            'scale_factor': 1.0,
+            'nbkit_normalize': True,
+            'nbkit_setMean': 0.0
+        }
+    if False:
+        # deltalin from ptcles (created from particle snapshot so includes CIC artifacts)
+        # on 64^3, noise curves looked the same as with linearMesh
+        opts['ext_grids_to_load']['deltalin_PtcleDens'] = {
+            'dir': 'IC_PtcleDensity_Ng%d' % opts['Ngrid'],
+            'file_format': 'nbkit_BigFileGrid',
+            'dataset_name': 'Field',
+            'scale_factor':
+            1.0 / (1.0 + 99.0),  # ICs were generated at z=99
+            'nbkit_normalize': True,
+            'nbkit_setMean': 0.0
+        }
 
     if True:
-        # L=500 ms_gadget sims produced with MP-Gadget, 1536^3 particles, 64^3 test data
-        opts['sim_name'] = 'ms_gadget_test_data'
-        opts['sim_irun'] = 4
-        # use value from cmd line b/c later options depend on this
-        opts['sim_seed'] = opts_update_dict.get('sim_seed', 403)
-        opts['ssseed'] = opts_update_dict.get(
-            'ssseed', 40000 + opts['sim_seed'])  # seed used to draw subsample
-        opts['sim_Ntimesteps'] = None  # Nbody, so used thousands of time steps
-        opts['sim_Nptcles'] = 1536
-        opts['sim_boxsize'] = 500.0
-        opts['sim_wig_now_string'] = 'wig'
-        # scale factor of simulation snapshot (only used to rescale deltalin -- do not change via arg!)
-        opts['sim_scale_factor'] = 0.6250
-        # halo mass
-        opts['halo_mass_string'] = opts_update_dict.get('halo_mass_string',
-                                                        '13.8_15.1')
+        # delta_ZA, created by moving 1536^3 ptcles with NGenic (includes CIC artifacts, small shot noise)
+        opts['ext_grids_to_load']['deltaZA'] = {
+            'dir':
+            'ZA_%.4f_PtcleDensity_Ng%d' %
+            (opts['sim_scale_factor'], opts['Ngrid']),
+            'file_format':
+            'nbkit_BigFileGrid',
+            'dataset_name':
+            'Field',
+            'scale_factor':
+            opts['sim_scale_factor'],
+            'nbkit_normalize':
+            True,
+            'nbkit_setMean':
+            0.0
+        }
+    if True:
+        # deltanonl painted from all 1536^3 DM particles (includes CIC artifacts, small shot noise)
+        opts['ext_grids_to_load']['delta_m'] = {
+            'dir':
+            'snap_%.4f_PtcleDensity_Ng%d' %
+            (opts['sim_scale_factor'], opts['Ngrid']),
+            'file_format':
+            'nbkit_BigFileGrid',
+            'dataset_name':
+            'Field',
+            'scale_factor':
+            opts['sim_scale_factor'],
+            'nbkit_normalize':
+            True,
+            'nbkit_setMean':
+            0.0
+        }
 
-        # linear density (ICs of the sims)
-        opts['ext_grids_to_load'] = OrderedDict()
+    ## shifted field options
+    opts[
+        'shifted_fields_RPsi'] = 0.23  # Psi smoothing used in shifting code
+    opts[
+        'shifted_fields_Np'] = 1536  # 1536     # Nptcles_per_dim used in shifting code; 768,1536
+    opts[
+        'shifted_fields_Nmesh'] = 1536  #1536 # internal Nmesh used in shifting code
+
+    #for psi_type_str in ['','Psi2LPT_']:
+    for psi_type_str in ['']:
         if True:
-            # deltalin from mesh (created on mesh, no particles involved)
-            opts['ext_grids_to_load']['deltalin'] = {
-                'dir': 'IC_LinearMesh_z0_Ng%d' % opts['Ngrid'],
-                'file_format': 'nbkit_BigFileGrid',
-                'dataset_name': 'Field',
-                'scale_factor': 1.0,
-                'nbkit_normalize': True,
-                'nbkit_setMean': 0.0
-            }
-        if False:
-            # deltalin from ptcles (created from particle snapshot so includes CIC artifacts)
-            # on 64^3, noise curves looked the same as with linearMesh
-            opts['ext_grids_to_load']['deltalin_PtcleDens'] = {
-                'dir': 'IC_PtcleDensity_Ng%d' % opts['Ngrid'],
-                'file_format': 'nbkit_BigFileGrid',
-                'dataset_name': 'Field',
-                'scale_factor':
-                1.0 / (1.0 + 99.0),  # ICs were generated at z=99
-                'nbkit_normalize': True,
-                'nbkit_setMean': 0.0
-            }
+            # 1 shifted by deltalin_Zeldovich displacement (using nbkit0.3; same as delta_ZA)
+            opts['ext_grids_to_load'][
+                '1_SHIFTEDBY_%sdeltalin' % psi_type_str] = {
+                    'dir':
+                    '1_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
+                    % (psi_type_str, opts['shifted_fields_RPsi'],
+                       opts['sim_scale_factor'], opts['shifted_fields_Np'],
+                       opts['shifted_fields_Nmesh'], opts['Ngrid']),
+                    'file_format':
+                    'nbkit_BigFileGrid',
+                    'dataset_name':
+                    'Field',
+                    'scale_factor':
+                    opts['sim_scale_factor'],
+                    'nbkit_normalize':
+                    True,
+                    'nbkit_setMean':
+                    0.0
+                }
 
         if True:
-            # delta_ZA, created by moving 1536^3 ptcles with NGenic (includes CIC artifacts, small shot noise)
-            opts['ext_grids_to_load']['deltaZA'] = {
-                'dir':
-                'ZA_%.4f_PtcleDensity_Ng%d' %
-                (opts['sim_scale_factor'], opts['Ngrid']),
-                'file_format':
-                'nbkit_BigFileGrid',
-                'dataset_name':
-                'Field',
-                'scale_factor':
-                opts['sim_scale_factor'],
-                'nbkit_normalize':
-                True,
-                'nbkit_setMean':
-                0.0
-            }
-        if True:
-            # deltanonl painted from all 1536^3 DM particles (includes CIC artifacts, small shot noise)
-            opts['ext_grids_to_load']['delta_m'] = {
-                'dir':
-                'snap_%.4f_PtcleDensity_Ng%d' %
-                (opts['sim_scale_factor'], opts['Ngrid']),
-                'file_format':
-                'nbkit_BigFileGrid',
-                'dataset_name':
-                'Field',
-                'scale_factor':
-                opts['sim_scale_factor'],
-                'nbkit_normalize':
-                True,
-                'nbkit_setMean':
-                0.0
-            }
+            # deltalin shifted by deltalin_Zeldovich displacement (using nbkit0.3)
+            opts['ext_grids_to_load'][
+                'deltalin_SHIFTEDBY_%sdeltalin' % psi_type_str] = {
+                    'dir':
+                    'IC_LinearMesh_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
+                    % (psi_type_str, opts['shifted_fields_RPsi'],
+                       opts['sim_scale_factor'], opts['shifted_fields_Np'],
+                       opts['shifted_fields_Nmesh'], opts['Ngrid']),
+                    'file_format':
+                    'nbkit_BigFileGrid',
+                    'dataset_name':
+                    'Field',
+                    'scale_factor':
+                    opts['sim_scale_factor'],
+                    'nbkit_normalize':
+                    True,
+                    'nbkit_setMean':
+                    0.0
+                }
 
-        ## shifted field options
-        opts[
-            'shifted_fields_RPsi'] = 0.23  # Psi smoothing used in shifting code
-        opts[
-            'shifted_fields_Np'] = 1536  # 1536     # Nptcles_per_dim used in shifting code; 768,1536
-        opts[
-            'shifted_fields_Nmesh'] = 1536  #1536 # internal Nmesh used in shifting code
+            # deltalin^2 shifted by deltalin_Zeldovich displacement (using nbkit0.3)
+            opts['ext_grids_to_load'][
+                'deltalin_growth-mean_SHIFTEDBY_%sdeltalin' %
+                psi_type_str] = {
+                    'dir':
+                    'IC_LinearMesh_growth-mean_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
+                    % (psi_type_str, opts['shifted_fields_RPsi'],
+                       opts['sim_scale_factor'], opts['shifted_fields_Np'],
+                       opts['shifted_fields_Nmesh'], opts['Ngrid']),
+                    'file_format':
+                    'nbkit_BigFileGrid',
+                    'dataset_name':
+                    'Field',
+                    'scale_factor':
+                    opts['sim_scale_factor'],
+                    'nbkit_normalize':
+                    True,
+                    'nbkit_setMean':
+                    0.0
+                }
 
-        #for psi_type_str in ['','Psi2LPT_']:
-        for psi_type_str in ['']:
+            # G2[deltalin] shifted by deltalin_Zeldovich displacement (using nbkit0.3)
+            opts['ext_grids_to_load'][
+                'deltalin_G2_SHIFTEDBY_%sdeltalin' % psi_type_str] = {
+                    'dir':
+                    'IC_LinearMesh_tidal_G2_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
+                    % (psi_type_str, opts['shifted_fields_RPsi'],
+                       opts['sim_scale_factor'], opts['shifted_fields_Np'],
+                       opts['shifted_fields_Nmesh'], opts['Ngrid']),
+                    'file_format':
+                    'nbkit_BigFileGrid',
+                    'dataset_name':
+                    'Field',
+                    'scale_factor':
+                    opts['sim_scale_factor'],
+                    'nbkit_normalize':
+                    True,
+                    'nbkit_setMean':
+                    0.0
+                }
+
             if True:
-                # 1 shifted by deltalin_Zeldovich displacement (using nbkit0.3; same as delta_ZA)
+                # deltalin^3 shifted by deltalin_Zeldovich displacement (using nbkit0.3)
                 opts['ext_grids_to_load'][
-                    '1_SHIFTEDBY_%sdeltalin' % psi_type_str] = {
-                        'dir':
-                        '1_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
-                        % (psi_type_str, opts['shifted_fields_RPsi'],
-                           opts['sim_scale_factor'], opts['shifted_fields_Np'],
-                           opts['shifted_fields_Nmesh'], opts['Ngrid']),
-                        'file_format':
-                        'nbkit_BigFileGrid',
-                        'dataset_name':
-                        'Field',
-                        'scale_factor':
-                        opts['sim_scale_factor'],
-                        'nbkit_normalize':
-                        True,
-                        'nbkit_setMean':
-                        0.0
-                    }
-
-            if True:
-                # deltalin shifted by deltalin_Zeldovich displacement (using nbkit0.3)
-                opts['ext_grids_to_load'][
-                    'deltalin_SHIFTEDBY_%sdeltalin' % psi_type_str] = {
-                        'dir':
-                        'IC_LinearMesh_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
-                        % (psi_type_str, opts['shifted_fields_RPsi'],
-                           opts['sim_scale_factor'], opts['shifted_fields_Np'],
-                           opts['shifted_fields_Nmesh'], opts['Ngrid']),
-                        'file_format':
-                        'nbkit_BigFileGrid',
-                        'dataset_name':
-                        'Field',
-                        'scale_factor':
-                        opts['sim_scale_factor'],
-                        'nbkit_normalize':
-                        True,
-                        'nbkit_setMean':
-                        0.0
-                    }
-
-                # deltalin^2 shifted by deltalin_Zeldovich displacement (using nbkit0.3)
-                opts['ext_grids_to_load'][
-                    'deltalin_growth-mean_SHIFTEDBY_%sdeltalin' %
+                    'deltalin_cube-mean_SHIFTEDBY_%sdeltalin' %
                     psi_type_str] = {
                         'dir':
-                        'IC_LinearMesh_growth-mean_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
+                        'IC_LinearMesh_cube-mean_intR0.00_0.50_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
                         % (psi_type_str, opts['shifted_fields_RPsi'],
-                           opts['sim_scale_factor'], opts['shifted_fields_Np'],
+                           opts['sim_scale_factor'],
+                           opts['shifted_fields_Np'],
                            opts['shifted_fields_Nmesh'], opts['Ngrid']),
                         'file_format':
                         'nbkit_BigFileGrid',
@@ -219,49 +279,6 @@ def main(argv):
                         'nbkit_setMean':
                         0.0
                     }
-
-                # G2[deltalin] shifted by deltalin_Zeldovich displacement (using nbkit0.3)
-                opts['ext_grids_to_load'][
-                    'deltalin_G2_SHIFTEDBY_%sdeltalin' % psi_type_str] = {
-                        'dir':
-                        'IC_LinearMesh_tidal_G2_intR0.00_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
-                        % (psi_type_str, opts['shifted_fields_RPsi'],
-                           opts['sim_scale_factor'], opts['shifted_fields_Np'],
-                           opts['shifted_fields_Nmesh'], opts['Ngrid']),
-                        'file_format':
-                        'nbkit_BigFileGrid',
-                        'dataset_name':
-                        'Field',
-                        'scale_factor':
-                        opts['sim_scale_factor'],
-                        'nbkit_normalize':
-                        True,
-                        'nbkit_setMean':
-                        0.0
-                    }
-
-                if True:
-                    # deltalin^3 shifted by deltalin_Zeldovich displacement (using nbkit0.3)
-                    opts['ext_grids_to_load'][
-                        'deltalin_cube-mean_SHIFTEDBY_%sdeltalin' %
-                        psi_type_str] = {
-                            'dir':
-                            'IC_LinearMesh_cube-mean_intR0.00_0.50_extR0.00_SHIFTEDBY_%sIC_LinearMeshR%.2f_a%.4f_Np%d_Nm%d_Ng%d_CICsum'
-                            % (psi_type_str, opts['shifted_fields_RPsi'],
-                               opts['sim_scale_factor'],
-                               opts['shifted_fields_Np'],
-                               opts['shifted_fields_Nmesh'], opts['Ngrid']),
-                            'file_format':
-                            'nbkit_BigFileGrid',
-                            'dataset_name':
-                            'Field',
-                            'scale_factor':
-                            opts['sim_scale_factor'],
-                            'nbkit_normalize':
-                            True,
-                            'nbkit_setMean':
-                            0.0
-                        }
 
     # ######################################################################
     # Catalogs to read
@@ -357,6 +374,7 @@ def main(argv):
                         save_bestfit_field=
                         'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ'))
 
+
     ## Smoothing for quadratic fields in Mpc/h
     #Rsmooth_lst = [0.1,2.5,5.0,10.0,20.0]
     Rsmooth_lst = [0.1]
@@ -399,15 +417,6 @@ def main(argv):
     opts['grids4plots_base_path'] = '$SCRATCH/perr/grids4plots/'
     opts['grids4plots_R'] = 0.0  # Gaussian smoothing applied to grids4plots
 
-    ## ANTI-ALIASING OPTIONS (do not change unless you know what you do)
-    # Kmax above which to 0-pad. Should use kmax<=2pi/L*N/2 to avoid
-    # unwanted Dirac delta images/foldings when multipling fields.
-    opts['kmax'] = 2.0 * np.pi / opts['boxsize'] * float(opts['Ngrid']) / 2.0
-    # CIC deconvolution of grid: None or 'grid_non_isotropic'
-    opts[
-        'grid_ptcle2grid_deconvolution'] = None  # 'grid_non_isotropic' #'grid_non_isotropic'
-    # CIC deconvolution of power: None or 'power_isotropic_and_aliasing'
-    opts['Pk_ptcle2grid_deconvolution'] = None
 
     ## what do to plot/save
     opts['keep_pickle'] = False
@@ -455,6 +464,12 @@ def main(argv):
     # update options given on command line
     opts.update(opts_update_dict)
     print("opts:", opts)
+
+    calc_Perr(opts, power_opts)
+
+
+
+def calc_Perr(opts, power_opts):
 
     #####################################
     # START PROGRAM
@@ -529,30 +544,6 @@ def main(argv):
         opts['trf_specs'])
     opts['densities_needed_for_trf_fcns'] = densities_needed_for_trf_fcns
 
-    # ##########################################################################
-    # Bunch parameters together to simplify arguments
-    # ##########################################################################
-
-    grid_opts = parameters.GridOpts(
-        Ngrid=opts['Ngrid'], kmax=opts['kmax'],
-        grid_ptcle2grid_deconvolution=opts['grid_ptcle2grid_deconvolution'])
-
-    sim_opts = parameters.SimOpts(
-        boxsize=opts['boxsize'], 
-        f_log_growth=opts.get('f_log_growth', None),
-        sim_scale_factor=opts['sim_scale_factor'],
-        cosmo_params=opts['cosmo_params'],
-        ssseed=opts['ssseed']
-        )
-
-    power_opts = parameters.PowerOpts(
-        k_bin_width=opts['k_bin_width'],
-        Pk_1d_2d_mode=opts.get('Pk_1d_2d_mode', '1d'),
-        RSD_poles=opts.get('RSD_poles', None),
-        RSD_Nmu=opts.get('RSD_Nmu', None),
-        RSD_los=opts.get('RSD_los', None),
-        Pk_ptcle2grid_deconvolution=opts['Pk_ptcle2grid_deconvolution']
-        )
 
     # ##########################################################################
     # loop over smoothing scales

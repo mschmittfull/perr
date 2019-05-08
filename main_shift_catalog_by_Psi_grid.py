@@ -31,60 +31,51 @@ def main():
     ./run.sh mpiexec -n 3 python main_ms_gadget_shift_catalog_by_Psi_grid.py 64 64
     """
 
-    opts = OrderedDict()
-
     # command line args
     ap = ArgumentParser()
-    ap.add_argument(
-        'Nptcles_per_dim',
-        type=int,
-        default=0,
-        help='Number of particles per dimension used in internal catalog')
+    ap.add_argument('Nptcles_per_dim',
+                    type=int,
+                    default=0,
+                    help='Number of particles per dimension used in internal'
+                    'catalog')
     ap.add_argument('out_Ngrid',
                     type=int,
                     default=0,
                     help='Ngrid for output density')
-    #ap.add_argument('in_fname_density_to_shift', default='', help='Name of file containing input density to be shifted by Psi')
-    #ap.add_argument('in_fname_Psi_source', default='', help='Name of file containing density from which we calculate Psi')
-    #ap.add_argument('boxsize', type=float, default=0.0, help='Boxsize in Mpc/h')
-    #ap.add_argument('plot_slices', type=boolean, default=False, help='Plot slices')
 
     # optional arguments
-    ap.add_argument(
-        '--Nmesh',
-        type=int,
-        default=0,
-        help=
-        'Internal Nmesh used to compute density to shifted and displacement potential. Should be >= Nptcles_per_dim.'
-    )
+    ap.add_argument('--Nmesh',
+                    type=int,
+                    default=0,
+                    help='Internal Nmesh used to compute density to be shifted '
+                    ' and displacement. Should be >= Nptcles_per_dim.')
+
     ap.add_argument('--SimSeed',
                     type=int,
                     default=403,
                     help='Simulation seed to load.')
-    ap.add_argument(
-        '--PsiOrder',
-        type=int,
-        default=1,
-        help=
-        "Order of displacement field (1 for Zeldovich, 2 for 2LPT displacement)."
-    )
+    ap.add_argument('--PsiOrder',
+                    type=int,
+                    default=1,
+                    help='Order of displacement field (1 for Zeldovich, 2 for '
+                         '2LPT displacement).')
     ap.add_argument('-v',
                     '--verbose',
-                    action="store_const",
-                    dest="verbose",
+                    action='store_const',
+                    dest='verbose',
                     const=1,
                     default=0,
-                    help="run in 'verbose' mode, with increased logging output")
-    ap.add_argument(
-        '--RSD',
-        type=int,
-        default=0,
-        help=
-        "0: No RSD, 1: Include RSD by displacing by Psi(q)+f (\e_LOS.\vPsi(q)) \e_LOS, where e_LOS is unit vector in line of sight direction."
-    )
+                    help='run in verbose mode, with increased logging output')
+    ap.add_argument('--RSD',
+                    type=int,
+                    default=0,
+                    help='0: No RSD, 1: Include RSD by displacing by Psi(q)+f '
+                         '(\e_LOS.\vPsi(q)) \e_LOS, where e_LOS is unit vector '
+                         'in line of sight direction.')
 
     # copy args
     cmd_args = ap.parse_args()
+    opts = OrderedDict()
     opts['Nptcles_per_dim'] = cmd_args.Nptcles_per_dim
     opts['out_Ngrid'] = cmd_args.out_Ngrid
     #opts['plot_slices'] = cmd_args.plot_slices
