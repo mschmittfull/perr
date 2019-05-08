@@ -1,13 +1,12 @@
 from __future__ import print_function, division
 from collections import OrderedDict, namedtuple, Counter
 import cPickle
-import glob
 import numpy as np
 import os
-import random
 import sys
 
-from lsstools import combine_fields_to_match_target
+from lsstools import combine_fields_to_match_target as combine_fields
+from lsstools import parameters
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
 from lsstools.model_spec import TrfSpec, TargetSpec
@@ -412,7 +411,7 @@ def main(argv):
 
     ## what do to plot/save
     opts['keep_pickle'] = False
-    opts['pickle_file_format'] = 'pickle'
+    opts['pickle_file_format'] = 'dill'
     # plot using plotting code for single realization; difft from code plotting avg
     do_plot = False
     # save grids for slice plots and scatter plots
@@ -516,7 +515,7 @@ def main(argv):
             os.makedirs(paths['grids4plots_path'])
         print("grids4plots_path:", paths['grids4plots_path'])
 
-    paths['cache_path'] = utils.make_cache_path(opts['cache_base_path'], comm)
+    paths['cache_path'] = utils.make_cache_path(paths['cache_base_path'], comm)
 
     # Check some params
     if ((opts['grid_ptcle2grid_deconvolution'] is not None)
@@ -564,12 +563,34 @@ def main(argv):
     for R in Rsmooth_lst:
         # actually calculate power spectra
         print("\n\nRun with R=", R)
-        tmp_opts = opts.copy()
-        tmp_opts['Rsmooth_for_quadratic_sources'] = R
-        this_pickle_dict = combine_fields_to_match_target.actually_calc_Pks(
-            tmp_opts, paths)
+
+        trf_fcn_opts = parameters.TrfFcnOpts(
+            Rsmooth_for_quadratic_sources=R,
+            Rsmooth_for_quadratic_sources2=(
+                opts['Rsmooth_for_quadratic_sources2']),
+            N_ortho_iter=opts['N_ortho_iter_for_trf_fcns'],
+            orth_method=opts['orth_method_for_trf_fcns'],
+            interp_kind=opts['interp_kind_for_trf_fcns']
+            )
+
+        this_pickle_dict = combine_fields.paint_combine_and_calc_power(
+            trf_specs=opts['trf_specs'],
+            paths=paths,
+            catalogs=opts['cats'], 
+            needed_densities=opts['densities_needed_for_trf_fcns'],
+            ext_grids_to_load=opts['ext_grids_to_load'],
+            trf_fcn_opts=trf_fcn_opts,
+            grid_opts=grid_opts,
+            sim_opts=sim_opts,
+            power_opts=power_opts,
+            save_grids4plots=opts['save_grids4plots'],
+            grids4plots_R=opts['grids4plots_R'],
+            Pkmeas_helper_columns=opts['Pkmeas_helper_columns']
+            )
+
         pickle_dict_at_R[(R,)] = this_pickle_dict
 
+        # Compare vs expected result.
         residual_key = '[hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ]_MINUS_[delta_h]'
         Perr = this_pickle_dict['Pkmeas'][(residual_key, residual_key)].P
         Perr_expected = np.array([
@@ -595,19 +616,8 @@ def main(argv):
         if comm.rank == 0:
             pickler.write_pickle(pickle_dict_at_R)
 
-    # #################################################################################
-    # Plot power spectra and correlations (TODO: move to new script that loads pickle)
-    # #################################################################################
-
     if do_plot:
-        if comm.rank == 0:
-            #try:
-            if True:
-                from main_quick_plot_Pk import plot_pickle_at_R
-                # just plot last smoothing scale
-                plot_pickle_at_R(pickler.full_fname, Rsmooth=Rsmooth_lst[0])
-            #except:
-            #print("Could not plot")
+        raise Exception('Not implemented any more. Load pickle manually')
 
     # print path with grids for slice and scatter plotting
     if opts['save_grids4plots']:

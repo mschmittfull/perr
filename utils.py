@@ -1,5 +1,8 @@
 from __future__ import print_function, division
 
+import glob
+import os
+import random
 
 def get_densities_needed_for_trf_fcns(trf_specs):
     """Get list of all densities actually needed for trf fcns. Makes sure that
@@ -16,25 +19,25 @@ def get_densities_needed_for_trf_fcns(trf_specs):
         Names of fields needed for the transfer functions.
     """
     needed = set()
-    for trf_spec in trf_specs:
+    for ts in trf_specs:
         # linear sources
-        needed.update(set(trf_spec.linear_sources))
+        needed.update(set(ts.linear_sources))
 
         # fixed linear sources
-        if trf_spec.hasattr('fixed_linear_sources'):
-            needed.update(set(trf_spec.fixed_linear_sources))
+        if hasattr(ts, 'fixed_linear_sources'):
+            needed.update(set(ts.fixed_linear_sources))
 
         # field_to_smoothen_and_square for quadratic fields, and target field
-        for f in [trf_spec.field_to_smoothen_and_square,
-                  trf_spec.field_to_smoothen_and_square2,
-                  target_field]:
+        for f in [ts.field_to_smoothen_and_square,
+                  ts.field_to_smoothen_and_square2,
+                  ts.target_field]:
             if f is not None:
                 needed.add(f)
 
         # fields contributing to target
-        if hasattr(trf_spec, 'target_spec'):
-            if hasattr(trf_spec.target_spec, 'linear_target_contris'):
-                needed.update(set(trf_spec.target_spec.linear_target_contris))
+        if hasattr(ts, 'target_spec'):
+            if hasattr(ts.target_spec, 'linear_target_contris'):
+                needed.update(set(ts.target_spec.linear_target_contris))
 
     return list(needed)
 

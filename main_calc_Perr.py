@@ -1,10 +1,8 @@
 from __future__ import print_function, division
 from collections import OrderedDict, namedtuple, Counter
 import cPickle
-import glob
 import numpy as np
 import os
-import random
 import sys
 # needed to save/load TrfSpec objects in pickle files.
 import ujson
@@ -2280,7 +2278,7 @@ def main(argv):
             os.makedirs(paths['grids4plots_path'])
         print("grids4plots_path:", paths['grids4plots_path'])
 
-    paths['cache_path'] = utils.make_cache_path(opts['cache_base_path'], comm)
+    paths['cache_path'] = utils.make_cache_path(paths['cache_base_path'], comm)
 
     # Check some params
     if ((opts['grid_ptcle2grid_deconvolution'] is not None)
@@ -2293,7 +2291,6 @@ def main(argv):
     densities_needed_for_trf_fcns = utils.get_densities_needed_for_trf_fcns(
         opts['trf_specs'])
     opts['densities_needed_for_trf_fcns'] = densities_needed_for_trf_fcns
-
 
     # ##########################################################################
     # Bunch parameters together to simplify arguments
@@ -2360,19 +2357,8 @@ def main(argv):
         if comm.rank == 0:
             pickler.write_pickle(pickle_dict_at_R)
 
-    # #################################################################################
-    # Plot power spectra and correlations (TODO: move to new script that loads pickle)
-    # #################################################################################
-
     if do_plot:
-        if comm.rank == 0:
-            #try:
-            if True:
-                from main_quick_plot_Pk import plot_pickle_at_R
-                # just plot last smoothing scale
-                plot_pickle_at_R(pickler.full_fname, Rsmooth=Rsmooth_lst[0])
-            #except:
-            #print("Could not plot")
+        raise Exception('Not implemented any more. Load pickle manually')
 
     # print path with grids for slice and scatter plotting
     if opts['save_grids4plots']:
