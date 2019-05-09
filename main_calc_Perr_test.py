@@ -1,6 +1,6 @@
 from __future__ import print_function, division
 from argparse import ArgumentParser
-from collections import OrderedDict, namedtuple, Counter
+from collections import namedtuple, OrderedDict
 import cPickle
 import numpy as np
 import os
@@ -10,7 +10,7 @@ from lsstools import combine_fields_to_match_target as combine_fields
 from lsstools import parameters
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
-from lsstools.model_spec import TrfSpec, TargetSpec
+from lsstools.model_spec import *
 from lsstools.pickle_utils.io import Pickler
 from nbodykit import CurrentMPIComm, logging, setup_logging
 import path_utils
@@ -58,11 +58,7 @@ def main():
 
     # Bump this when changing code without changing options. Otherwise pickle
     # loading might wrongly read old pickles.
-    opts['main_calc_Perr_test_version'] = '1.4'
-
-    # ######################################################################
-    # Analysis options
-    # ######################################################################
+    opts['main_calc_Perr_test_version'] = '1.5'
 
     # Simulation options. Will be used by path_utils to get input path, and
     # to compute deltalin at the right redshift.
@@ -103,7 +99,8 @@ def main():
     # Specify bias expansions to test
     opts['trf_specs'] = []
 
-    # Quadratic Lagrangian bias: delta_Z + b1 deltalin(q+Psi) + b2 [deltalin^2-<deltalin^2>](q+Psi) + bG2 [G2](q+Psi)
+    # Quadratic Lagrangian bias: delta_Z + b1 deltalin(q+Psi) + b2 
+    # [deltalin^2-<deltalin^2>](q+Psi) + bG2 [G2](q+Psi)
     opts['trf_specs'].append(
         TrfSpec(linear_sources=[
             'deltalin_SHIFTEDBY_deltalin',
@@ -117,7 +114,7 @@ def main():
                 save_bestfit_field=
                 'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ'))
 
-    # How to save results
+    # Save results
     opts['keep_pickle'] = False
     opts['pickle_file_format'] = 'dill'
     opts['pickle_path'] = '$SCRATCH/perr/pickle/'
@@ -132,7 +129,7 @@ def main():
     opts['grids4plots_base_path'] = '$SCRATCH/perr/grids4plots/'
     opts['grids4plots_R'] = 0.0  # Gaussian smoothing applied to grids4plots
 
-    # Cache
+    # Cache path
     opts['cache_base_path'] = '$SCRATCH/perr/cache/'
 
     # Run the program given the above opts.
@@ -175,12 +172,9 @@ def calc_Perr(opts):
     comm = CurrentMPIComm.get()
     logger = logging.getLogger('PerrCalc')
 
-    # check for duplicate save_bestfit_field entries
-    save_bestfit_fields = [tf.save_bestfit_field for tf in opts['trf_specs']]
-    if len(Counter(save_bestfit_fields)) != len(opts['trf_specs']):
-        raise Exception("Found duplicate save_bestfit_field: %str" %
-                        str(Counter(save_bestfit_fields)))
+    check_trf_specs_consistency(opts['trf_specs'])
 
+  
     # Init Pickler instance to save pickle later (this will init pickle fname)
     pickler = None
     if comm.rank == 0:
