@@ -12,7 +12,6 @@ from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
 from lsstools.model_spec import *
 from lsstools.pickle_utils.io import Pickler
-from main_calc_Perr import calc_Perr
 from nbodykit import CurrentMPIComm, logging, setup_logging
 import path_utils
 import utils
@@ -30,9 +29,9 @@ def main():
         target=delta_m.
 
     Usage examples:
-      ./run.sh python main_calc_Perr_test.py
+      ./run.sh python main_calc_Perr.py
     or 
-      ./run.sh mpiexec -n 4 python main_calc_Perr_test.py --SimSeed 403
+      ./run.sh mpiexec -n 4 python main_calc_Perr.py --SimSeed 403
     """
 
     #####################################
@@ -58,13 +57,13 @@ def main():
 
     # Bump this when changing code without changing options. Otherwise pickle
     # loading might wrongly read old pickles.
-    opts['main_calc_Perr_test_version'] = '1.5'
+    opts['main_calc_Perr_version'] = '0.1'
 
     # Simulation options. Will be used by path_utils to get input path, and
     # to compute deltalin at the right redshift.
     seed = cmd_args.SimSeed
     opts['sim_opts'] = parameters.MSGadgetSimOpts.load_default_opts(
-        sim_name='ms_gadget_test_data',
+        sim_name='ms_gadget',
         sim_seed=seed,
         ssseed=40000+seed,
         halo_mass_string=cmd_args.HaloMassString)
@@ -132,38 +131,122 @@ def main():
     # Cache path
     opts['cache_base_path'] = '$SCRATCH/perr/cache/'
 
-
     # Run the program given the above opts.
     outdict = calc_Perr(opts)
 
 
-    # Compare vs expected result.
-    residual_key = '[hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ]_MINUS_[delta_h]'
-    Perr = outdict['Pkmeas'][(residual_key, residual_key)].P
-    Perr_expected = np.array([
-        9965.6, 17175.8, 22744.4, 19472.3, 19081.2, 19503.4, 19564.9,
-        18582.9, 19200.1, 16911.3, 16587.4, 16931.9, 15051.0, 13835.1,
-        13683.8, 13109.9, 12353.5, 11900.2, 11085.1, 11018.4, 10154.0,
-        9840.7, 8960.6, 8484.1, 7942.2, 7426.7, 6987.8, 6578.1, 6269.1,
-        5810.7, 5511.7
-    ])
+def calc_Perr(opts):
+    """
+    TODO: move to some other module!
+    """
+
+    #####################################
+    # Initialize program.
+    #####################################
+
+    # make sure we keep the pickle if it is a big run and do not plot
+    if opts['grid_opts'].Ngrid > 256:
+        opts['keep_pickle'] = True
+
+    ### derived options (do not move above b/c command line args might
+    ### overwrite some options!)
+    opts['in_path'] = path_utils.get_in_path(opts)
+    # for output densities
+    opts['out_rho_path'] = os.path.join(
+        opts['in_path'],
+        'out_rho_Ng%d' % opts['grid_opts'].Ngrid
+    )
+
+    # expand environment names in paths
+    paths = {}
+    for key in [
+            'in_path', 'in_fname', 'in_fname_PTsim_psi_calibration',
+            'in_fname_halos_to_displace_by_mchi', 'pickle_path',
+            'cache_base_path', 'grids4plots_base_path', 'out_rho_path'
+    ]:
+        if opts.has_key(key):
+            if opts[key] is None:
+                paths[key] = None
+            else:
+                paths[key] = os.path.expandvars(opts[key])
 
     setup_logging()
     comm = CurrentMPIComm.get()
-    logger = logging.getLogger('TestPerrCalc')
+    logger = logging.getLogger('PerrCalc')
 
+    check_trf_specs_consistency(opts['trf_specs'])
+
+  
+    # Init Pickler instance to save pickle later (this will init pickle fname)
+    pickler = None
     if comm.rank == 0:
-        Perr_lst = ['%.1f' % a for a in list(Perr)]
-        Perr_expected_lst = ['%.1f' % a for a in list(Perr)]
-        logger.info('Perr:\n%s' % str(','.join(Perr_lst)))
-        logger.info('Expected Perr:\n%s' % str(','.join(Perr_expected_lst)))
-        if np.allclose(Perr, Perr_expected, rtol=1e-3):
-            logger.info('TEST Perr: OK')
+        pickler = Pickler(path=paths['pickle_path'],
+                          base_fname='main_calc_Perr',
+                          file_format=opts['pickle_file_format'],
+                          rand_sleep=(opts['grid_opts'].Ngrid > 128))
+        print("Pickler: ", pickler.full_fname)
+    pickler = comm.bcast(pickler, root=0)
+
+    # where to save grids for slice and scatter plots
+    if opts['save_grids4plots']:
+        paths['grids4plots_path'] = os.path.join(
+            paths['grids4plots_base_path'],
+            os.path.basename(pickler.full_fname))
+        if not os.path.exists(paths['grids4plots_path']):
+            os.makedirs(paths['grids4plots_path'])
+        print("grids4plots_path:", paths['grids4plots_path'])
+
+    paths['cache_path'] = utils.make_cache_path(paths['cache_base_path'], comm)
+
+    # Get list of all densities actually needed for trf fcns.
+    densities_needed_for_trf_fcns = utils.get_densities_needed_for_trf_fcns(
+        opts['trf_specs'])
+    opts['densities_needed_for_trf_fcns'] = densities_needed_for_trf_fcns
+
+
+    # ##########################################################################
+    # Run program.
+    # ##########################################################################
+
+    pickle_dict = combine_fields.paint_combine_and_calc_power(
+        trf_specs=opts['trf_specs'],
+        paths=paths,
+        catalogs=opts['cats'], 
+        needed_densities=opts['densities_needed_for_trf_fcns'],
+        ext_grids_to_load=opts['ext_grids_to_load'],
+        trf_fcn_opts=opts['trf_fcn_opts'],
+        grid_opts=opts['grid_opts'],
+        sim_opts=opts['sim_opts'],
+        power_opts=opts['power_opts'],
+        save_grids4plots=opts['save_grids4plots'],
+        grids4plots_R=opts['grids4plots_R'],
+        Pkmeas_helper_columns=opts['Pkmeas_helper_columns']
+        )
+
+    # copy over opts so they are saved
+    assert not pickle_dict.has_key('opts')
+    pickle_dict['opts'] = opts.copy()
+
+    # save all resutls to pickle
+    if comm.rank == 0:
+        pickler.write_pickle(pickle_dict)
+
+    # print path with grids for slice and scatter plotting
+    if opts['save_grids4plots']:
+        print("grids4plots_path: %s" % paths['grids4plots_path'])
+
+    # delete pickle if not wanted any more
+    if comm.rank == 0:
+        if opts['keep_pickle']:
+            print("Pickle: %s" % pickler.full_fname)
         else:
-            logger.info('TEST Perr: FAILED')
-            raise Exception('Test failed')
+            pickler.delete_pickle_file()
 
+        # remove cache dir
+        from shutil import rmtree
+        rmtree(paths['cache_path'])
 
+    return pickle_dict
 
 if __name__ == '__main__':
     main()

@@ -1,18 +1,10 @@
 from __future__ import print_function, division
-
-import numpy as np
-import cPickle
-import matplotlib.pyplot as plt
-from scipy import interpolate
-import matplotlib.transforms as mtransforms
+import matplotlib
 from matplotlib import rcParams
 from matplotlib import rc
-import matplotlib.ticker as ticker
-import matplotlib
+import matplotlib.pyplot as plt
 
-LABEL_KAPPACMB = '$\\kappa_\\mathrm{CMB}$'
-
-# setup plot styles
+# Setup plot styles
 fontsize = 22
 xylabelfs = fontsize + 2
 linewidth = 2

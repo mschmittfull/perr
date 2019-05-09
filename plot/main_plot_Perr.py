@@ -587,7 +587,7 @@ def main():
         pickle_path=pickle_path,
         base_fname=fname,
         comp_key='opts',  #'flat_opts',
-        fname_pattern=r'^main_calc_Perr.*.pickle$',
+        fname_pattern=r'^main_calc_Perr.*.dill$',
         ignore_pickle_keys=[
             'pickle_fname', 'out_rho_path', 'in_path', 'sim_irun', 'ssseed',
             'cats'
@@ -607,8 +607,8 @@ def main():
 
         ## params to vary for different curves: difft mass bins
         varyparams = OrderedDict()
-        halo_masses = [(10.8, 11.8), (11.8, 12.8), (12.8, 13.8), (13.8, 15.1)]
-        #halo_masses = [(10.8,11.8)]
+        #halo_masses = [(10.8, 11.8), (11.8, 12.8), (12.8, 13.8), (13.8, 15.1)]
+        halo_masses = [(13.8,15.1)]
         halo_mass_strings = ['%.1f_%.1f' % (hm[0], hm[1]) for hm in halo_masses]
         if True:
             for halo_mass_string in halo_mass_strings:
