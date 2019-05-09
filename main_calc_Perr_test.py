@@ -67,7 +67,7 @@ def main():
     # Simulation options. Will be used by path_utils to get input path, and
     # to compute deltalin at the right redshift.
     seed = cmd_args.SimSeed
-    opts['sim_opts'] = parameters.SimOpts.load_default_opts(
+    opts['sim_opts'] = parameters.MSGadgetSimOpts.load_default_opts(
         sim_name='ms_gadget_test_data',
         sim_seed=seed,
         ssseed=40000+seed,
@@ -187,7 +187,7 @@ def calc_Perr(opts):
         pickler = Pickler(path=paths['pickle_path'],
                           base_fname='main_calc_Perr',
                           file_format=opts['pickle_file_format'],
-                          rand_sleep=(opts['Ngrid'] > 128))
+                          rand_sleep=(opts['grid_opts'].Ngrid > 128))
         print("Pickler: ", pickler.full_fname)
     pickler = comm.bcast(pickler, root=0)
 
@@ -201,13 +201,6 @@ def calc_Perr(opts):
         print("grids4plots_path:", paths['grids4plots_path'])
 
     paths['cache_path'] = utils.make_cache_path(paths['cache_base_path'], comm)
-
-    # Check some params
-    if ((opts['grid_ptcle2grid_deconvolution'] is not None)
-            and (opts['Pk_ptcle2grid_deconvolution'] is not None)):
-        raise Exception(
-            "Must not simultaneously apply ptcle2grid deconvolution to grid and Pk."
-        )
 
     # Get list of all densities actually needed for trf fcns.
     densities_needed_for_trf_fcns = utils.get_densities_needed_for_trf_fcns(
@@ -240,7 +233,7 @@ def calc_Perr(opts):
 
     # Compare vs expected result.
     residual_key = '[hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ]_MINUS_[delta_h]'
-    Perr = this_pickle_dict['Pkmeas'][(residual_key, residual_key)].P
+    Perr = pickle_dict['Pkmeas'][(residual_key, residual_key)].P
     Perr_expected = np.array([
         9965.6, 17175.8, 22744.4, 19472.3, 19081.2, 19503.4, 19564.9,
         18582.9, 19200.1, 16911.3, 16587.4, 16931.9, 15051.0, 13835.1,

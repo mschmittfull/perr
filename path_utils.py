@@ -7,37 +7,39 @@ def get_in_path(opts):
     """
     Paths of different simulations. Add new entries for other simulations.
     """
-    if opts['sim_name'] == 'ms_gadget':
+    sim_opts = opts['sim_opts']
+    if sim_opts.sim_name == 'ms_gadget':
         return '$SCRATCH/lss/ms_gadget/run%d/%08d-%05d-%.1f-%s/' % (
-            opts['sim_irun'], opts['sim_seed'], opts['sim_Nptcles'],
-            opts['sim_boxsize'], opts['sim_wig_now_string'])
+            sim_opts.sim_irun, sim_opts.sim_seed, sim_opts.sim_Nptcles,
+            sim_opts.boxsize, sim_opts.sim_wig_now_string)
 
-    elif opts['sim_name'] == 'ms_gadget_test_data':
+    elif sim_opts.sim_name == 'ms_gadget_test_data':
         return 'test_data/ms_gadget/run%d/%08d-%05d-%.1f-%s/' % (
-            opts['sim_irun'], opts['sim_seed'], opts['sim_Nptcles'],
-            opts['sim_boxsize'], opts['sim_wig_now_string'])
+            sim_opts.sim_irun, sim_opts.sim_seed, sim_opts.sim_Nptcles,
+            sim_opts.boxsize, sim_opts.sim_wig_now_string)
 
-    elif opts['sim_name'] == 'yurecsims':
-        return os.path.join('$SCRATCH/lss/yurecsims/', opts['sim_dir'])
+    elif sim_opts.sim_name == 'yurecsims':
+        return os.path.join('$SCRATCH/lss/yurecsims/', sim_opts.sim_dir)
 
-    elif opts['sim_name'] == 'RunPB':
-        return os.path.join('$DATA/lss/mwhite/RunPB/PB%02d/' % opts['sim_seed'])
+    elif sim_opts.sim_name == 'RunPB':
+        return os.path.join('$DATA/lss/mwhite/RunPB/PB%02d/' % sim_opts.sim_seed)
 
-    elif opts['sim_name'] == 'jerryou_baoshift':
-        # MS 31/01/2018: Cannot recall why 309 is excluded here, removed it
-        #if (opts['sim_boxsize']==1380.) and (opts['sim_Nptcles']==2048) and (opts['sim_seed']!=309):
-        if (opts['sim_boxsize'] == 1380.) and (opts['sim_Nptcles'] == 2048):
+    elif sim_opts.sim_name == 'jerryou_baoshift':
+        # MS 31/01/2018: Cannot recall why 309 was excluded here, removed it
+        #if (sim_opts.boxsize==1380.) and (sim_opts.sim_Nptcles==2048) and 
+        # (sim_opts.sim_seed!=309):
+        if (sim_opts.boxsize == 1380.) and (sim_opts.sim_Nptcles == 2048):
             return '$SCRATCH/lss/jerryou/baoshift/run%d/%08d-%d-%s/' % (
-                opts['sim_irun'], opts['sim_seed'], opts['sim_Ntimesteps'],
-                opts['sim_wig_now_string'])
+                sim_opts.sim_irun, sim_opts.sim_seed, sim_opts.sim_Ntimesteps,
+                sim_opts.sim_wig_now_string)
         else:
             return '$SCRATCH/lss/jerryou/baoshift/run%d/%08d-%d-%05d-%.1f-%s/' % (
-                opts['sim_irun'], opts['sim_seed'], opts['sim_Ntimesteps'],
-                opts['sim_Nptcles'], opts['sim_boxsize'],
-                opts['sim_wig_now_string'])
+                sim_opts.sim_irun, sim_opts.sim_seed, sim_opts.sim_Ntimesteps,
+                sim_opts.sim_Nptcles, sim_opts.boxsize,
+                sim_opts.sim_wig_now_string)
 
     else:
-        raise Exception("Unknown sim_name: %s" % str(opts['sim_name']))
+        raise Exception("Unknown sim_name: %s" % str(sim_opts.sim_name))
 
 
 def get_subdir_link_of_ssseed_file(path, fname):
