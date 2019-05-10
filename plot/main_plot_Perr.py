@@ -46,7 +46,7 @@ def main():
 
     #### MORE OPTIONS
 
-    sim_seeds = [401, 403]
+    sim_seeds = [400, 403]
     #sim_seeds = range(400,405)
 
     # switch to show title or not
@@ -588,10 +588,11 @@ def main():
         base_fname=fname,
         comp_key='opts',  #'flat_opts',
         fname_pattern=r'^main_calc_Perr.*.dill$',
-        ignore_pickle_keys=[
-            'pickle_fname', 'out_rho_path', 'in_path', 'sim_irun', 'ssseed',
-            'cats'
-        ],
+        ignore_pickle_keys=['pickle_fname', 'out_rho_path', 'in_path'],
+        # ignore_pickle_keys=[
+        #     'pickle_fname', 'out_rho_path', 'in_path', 'sim_irun', 'ssseed',
+        #     'cats'
+        # ],
         skip_keys_when_stacking=['opts', 'flat_opts', 'cat_infos'],
         return_base_vp_pickles=True,
         return_base_vp_pickle_opts=True,
@@ -608,7 +609,7 @@ def main():
         ## params to vary for different curves: difft mass bins
         varyparams = OrderedDict()
         #halo_masses = [(10.8, 11.8), (11.8, 12.8), (12.8, 13.8), (13.8, 15.1)]
-        halo_masses = [(13.8,15.1)]
+        halo_masses = [(12.8,13.8)]
         halo_mass_strings = ['%.1f_%.1f' % (hm[0], hm[1]) for hm in halo_masses]
         if True:
             for halo_mass_string in halo_mass_strings:

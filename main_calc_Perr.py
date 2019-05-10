@@ -58,7 +58,7 @@ def main():
 
     # Bump this when changing code without changing options. Otherwise pickle
     # loading might wrongly read old pickles.
-    opts['main_calc_Perr_version'] = '0.1'
+    opts['main_calc_Perr_version'] = '0.2'
 
     # Simulation options. Will be used by path_utils to get input path, and
     # to compute deltalin at the right redshift.
@@ -66,7 +66,6 @@ def main():
     opts['sim_opts'] = parameters_ms_gadget.MSGadgetSimOpts.load_default_opts(
         sim_name='ms_gadget',
         sim_seed=seed,
-        ssseed=40000+seed,
         halo_mass_string=cmd_args.HaloMassString)
 
     # Grid options.

@@ -67,7 +67,6 @@ def main():
     opts['sim_opts'] = parameters_ms_gadget.MSGadgetSimOpts.load_default_opts(
         sim_name='ms_gadget_test_data',
         sim_seed=seed,
-        ssseed=40000+seed,
         halo_mass_string=cmd_args.HaloMassString)
 
     # Grid options.
