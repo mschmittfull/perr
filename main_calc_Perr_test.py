@@ -8,6 +8,7 @@ import sys
 
 from lsstools import combine_fields_to_match_target as combine_fields
 from lsstools import parameters
+from lsstools import parameters_ms_gadget
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import generate_calc_Da
 from lsstools.model_spec import *
@@ -63,7 +64,7 @@ def main():
     # Simulation options. Will be used by path_utils to get input path, and
     # to compute deltalin at the right redshift.
     seed = cmd_args.SimSeed
-    opts['sim_opts'] = parameters.MSGadgetSimOpts.load_default_opts(
+    opts['sim_opts'] = parameters_ms_gadget.MSGadgetSimOpts.load_default_opts(
         sim_name='ms_gadget_test_data',
         sim_seed=seed,
         ssseed=40000+seed,
