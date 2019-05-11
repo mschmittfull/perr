@@ -613,14 +613,14 @@ def main():
         halo_mass_strings = ['%.1f_%.1f' % (hm[0], hm[1]) for hm in halo_masses]
         if True:
             for halo_mass_string in halo_mass_strings:
-                varyparams[((('halo_mass_string',),
+                varyparams[((('sim_opts', 'halo_mass_string',),
                              halo_mass_string),)] = dict()
         halo_mass_string = None
 
         # get stacked pickles for each entry of varyparams
         stacked_vp_pickles, base_vp_pickles, base_vp_pickles_flat_opts = (
             retrieve_pickles.get_stacked_pickles_for_varying_base_opts(
-                stack_key='sim_seed',
+                stack_key=('sim_opts', 'sim_seed'),
                 stack_values=sim_seeds,
                 base_param_names_and_values=varyparams.keys(),
                 **default_stack_and_vary_kwargs))
@@ -645,7 +645,7 @@ def main():
         for iM in range(len(halo_masses)):
             log10M_min, log10M_max = halo_masses[iM]
             halo_mass_string = halo_mass_strings[iM]
-            vpkey = ((('halo_mass_string',), halo_mass_string),)
+            vpkey = ((('sim_opts', 'halo_mass_string',), halo_mass_string),)
 
             print("stacked_vp_pickles keys:", stacked_vp_pickles.keys())
             stacked_pickles = stacked_vp_pickles[vpkey]
@@ -1321,24 +1321,6 @@ def main():
         # PLOT r(bestfit_field,target) and 1-r^2
         # #################################################################################
 
-        ## params to vary for different curves: difft mass bins
-        varyparams = OrderedDict()
-        halo_masses = [(10.8, 11.8), (11.8, 12.8), (12.8, 13.8), (13.8, 15.1)]
-        #halo_masses = [(10.8,11.8),(11.8,12.8)]
-        halo_mass_strings = ['%.1f_%.1f' % (hm[0], hm[1]) for hm in halo_masses]
-        if True:
-            for halo_mass_string in halo_mass_strings:
-                varyparams[((('halo_mass_string',),
-                             halo_mass_string),)] = dict()
-        halo_mass_string = None
-
-        # get stacked pickles for each entry of varyparams
-        stacked_vp_pickles, base_vp_pickles, base_vp_pickles_flat_opts = (
-            retrieve_pickles.get_stacked_pickles_for_varying_base_opts(
-                stack_key='sim_seed',
-                stack_values=sim_seeds,
-                base_param_names_and_values=varyparams.keys(),
-                **default_stack_and_vary_kwargs))
 
         ## PLOT
         fig, axarr = plt.subplots(
