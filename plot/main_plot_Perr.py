@@ -626,7 +626,6 @@ def main():
                 **default_stack_and_vary_kwargs))
 
         ## PLOT
-        #fig, axarr = plt.subplots(4,1,figsize=(8,14), sharex=True, sharey=False); axorder = [0,1,2,3]
         if layout == '4x1':
             fig, axarr = plt.subplots(4,
                                       1,
@@ -652,10 +651,13 @@ def main():
             base_pickle_opts = base_vp_pickles[vpkey]['opts']
 
             # get some basic info
-            boxsize = int(base_pickle_opts['sim_boxsize'])
-            redshift = 1.0 / base_pickle_opts['sim_scale_factor'] - 1.0
+            boxsize = int(base_pickle_opts['sim_opts'].boxsize)
+            redshift = 1.0 / base_pickle_opts['sim_opts'].sim_scale_factor - 1.0
             kmin_plot = 1e-2
-            kmax_plot = np.min(np.array([1.0, base_pickle_opts['kmax']]))
+            kmax_plot = np.min(np.array([
+                1.0,
+                base_pickle_opts['grid_opts'].kmax
+                ]))
 
             # switch legend vs annotation
             if True or tryid in ['L32c', 'L32cNoZ']:
@@ -676,10 +678,11 @@ def main():
             plt.sca(ax)
             #plt.title(halo_mass_string)
 
-            Rsmooth_lst = [t[0] for t in stacked_vp_pickles[vpkey].keys()]
-            Rsmooth_lst = sorted(Rsmooth_lst)
-            Rsmooth_lst = Rsmooth_lst[::-1]
-            base_pickle_first_R = base_vp_pickles[vpkey][(Rsmooth_lst[0],)]
+            #Rsmooth_lst = [t[0] for t in stacked_vp_pickles[vpkey].keys()]
+            #Rsmooth_lst = sorted(Rsmooth_lst)
+            #Rsmooth_lst = Rsmooth_lst[::-1]
+            # changed dicts so don't have the (R,) key any more
+            base_pickle_first_R = base_vp_pickles[vpkey]
             print("tmp:", base_pickle_first_R['opts'].keys())
             trf_specs = base_pickle_first_R['opts']['trf_specs']
             trf_specs_save_bestfit_fields = [
@@ -704,24 +707,24 @@ def main():
             print("nbar_of_cat:", nbar_of_cat)
             #raise Exception("dbg")
 
-            Rsmooth = Rsmooth_lst[-1]
-            tmp_key = stacked_pickles[(Rsmooth,)]['Pkmeas'].keys()[0]
-            Nsims = stacked_pickles[(Rsmooth,)]['Pkmeas'][tmp_key]['k'].shape[0]
+            #Rsmooth = Rsmooth_lst[-1]
+            tmp_key = stacked_pickles['Pkmeas'].keys()[0]
+            Nsims = stacked_pickles['Pkmeas'][tmp_key]['k'].shape[0]
             print("Nsims:", Nsims)
             assert Nsims == len(sim_seeds)
 
-            N_ortho_iter = base_pickle_opts['N_ortho_iter_for_trf_fcns']
+            N_ortho_iter = base_pickle_opts['trf_fcn_opts'].N_ortho_iter
 
             for tfcounter, tf in enumerate(trf_specs[:1]):
-                for icounter, Rsmooth in enumerate(Rsmooth_lst[:1]):
-                    tmp_key = stacked_pickles[(Rsmooth,)]['Pkmeas'].keys()[0]
-                    kvec = np.mean(
-                        stacked_pickles[(Rsmooth,)]['Pkmeas'][tmp_key]['k'],
-                        axis=0)
+                #for icounter, Rsmooth in enumerate(Rsmooth_lst[:1]):
+                tmp_key = stacked_pickles['Pkmeas'].keys()[0]
+                kvec = np.mean(
+                    stacked_pickles['Pkmeas'][tmp_key]['k'],
+                    axis=0)
 
             # CIC window (eq. 21 from jing et al https://arxiv.org/pdf/astro-ph/0409240.pdf)
-            Delta_x = base_pickle_opts['sim_boxsize'] / float(
-                base_pickle_opts['Ngrid'])
+            Delta_x = base_pickle_opts['sim_opts'].boxsize / float(
+                base_pickle_opts['grid_opts'].Ngrid)
             k_nyq = np.pi / Delta_x
             nbar_kvec = np.zeros(kvec.shape[0] + 1)
             nbar_kvec[0] = kmin_plot
@@ -777,12 +780,12 @@ def main():
                     if iM < 2:
                         continue
                 # plot
-                for icounter_R, Rsmooth in enumerate(Rsmooth_lst):
-                    tmp_key = stacked_pickles[(Rsmooth,)]['Pkmeas'].keys()[0]
+                if True:
+                    tmp_key = stacked_pickles['Pkmeas'].keys()[0]
                     kvec = np.mean(
-                        stacked_pickles[(Rsmooth,)]['Pkmeas'][tmp_key]['k'],
+                        stacked_pickles['Pkmeas'][tmp_key]['k'],
                         axis=0)
-                    Pks = stacked_pickles[(Rsmooth,)]['Pkmeas']
+                    Pks = stacked_pickles['Pkmeas']
                     id1 = tf.save_bestfit_field
                     id2 = tf.target_field
                     label = '%s' % get_texlabel(
@@ -815,7 +818,7 @@ def main():
                         (0, [1, 1]),
                         (0, [8, 4]),
                     ]
-                    ls = linestyles[icounter_R]
+                    ls = linestyles[0]
                     plt_kwargs['ls'] = ls
 
                     if True:
@@ -830,7 +833,7 @@ def main():
                             if True:
                                 # plot line
                                 if tfcounter == 0:
-                                    label = 'R=%s' % Rsmooth
+                                    label = 'redidual'
                                 else:
                                     label = '_nolabel_'
                                 ax.semilogx(kvec,
@@ -900,8 +903,7 @@ def main():
                     # show noise if trf fcns are used for best-fit field
                     for ifit, fitspec in enumerate(trf_fcn_fitspecs):
                         # plot using fitted_stacked_pickles
-                        fitted_Pks = fitted_stacked_pickles[fitspec['name']][(
-                            Rsmooth,)]['Pkmeas']
+                        fitted_Pks = fitted_stacked_pickles[fitspec['name']]['Pkmeas']
                         ww = np.where((kvec >= fitspec['settings']['kmin']) &
                                       (kvec <= fitspec['settings']['kmax']))[0]
                         ymat = (fitted_Pks[(id1, id1)].P -
@@ -990,12 +992,12 @@ def main():
             if True:
                 # also show curve with P_target,target of last trf_spec (e.g. to plot P_hh).
                 # do this such that ylim is not changed
-                for icounter, Rsmooth in enumerate(Rsmooth_lst):
-                    tmp_key = stacked_pickles[(Rsmooth,)]['Pkmeas'].keys()[0]
+                if True:
+                    tmp_key = stacked_pickles['Pkmeas'].keys()[0]
                     kvec = np.mean(
-                        stacked_pickles[(Rsmooth,)]['Pkmeas'][tmp_key]['k'],
+                        stacked_pickles['Pkmeas'][tmp_key]['k'],
                         axis=0)
-                    Pks = stacked_pickles[(Rsmooth,)]['Pkmeas']
+                    Pks = stacked_pickles['Pkmeas']
                     ymat = Pks[(tf.target_field, tf.target_field)]['P']
                     if tf.target_field == 'delta_h':
                         label = '_nolabel_'  # '$P_{hh}$'
@@ -1067,7 +1069,7 @@ def main():
 
                 if False:
                     # enforce that error power can never be larger than target power
-                    Pks = stacked_pickles[(Rsmooth,)]['Pkmeas']
+                    Pks = stacked_pickles['Pkmeas']
                     ymat = Pks[(tf.target_field, tf.target_field)]['P']
                     Ptarget = np.mean(ymat, axis=0)
                     ax.plot(kvec, ((np.minimum(
@@ -1130,7 +1132,7 @@ def main():
                 #plt.title('FOF halos at $\\,z=$%.1f, no mass weighting' % redshift, y=1.01, fontsize=constants.xylabelfs-4)
             # legend
             if show_legend:
-                if len(Rsmooth_lst) > 1:
+                if False:
                     ax.legend(loc='best',
                               ncol=2,
                               fontsize=8,
@@ -1310,7 +1312,9 @@ def main():
             plt.tight_layout(w_pad=-0.5, h_pad=0)
 
         if save_plots:
-            plot_fname = 'Perr_over_poisson_multipanel.pdf'
+            if not os.path.exists('pdf/'):
+                os.makedirs('pdf/')
+            plot_fname = 'pdf/Perr_over_poisson_multipanel.pdf'
             plt.savefig(plot_fname)
             print("Made %s" % plot_fname)
         else:
@@ -1382,10 +1386,7 @@ def main():
                 ax = axarr[(axrow, axcol)]
                 plt.sca(ax)
 
-                Rsmooth_lst = [t[0] for t in stacked_vp_pickles[vpkey].keys()]
-                Rsmooth_lst = sorted(Rsmooth_lst)
-                Rsmooth_lst = Rsmooth_lst[::-1]
-                base_pickle_first_R = base_vp_pickles[vpkey][(Rsmooth_lst[0],)]
+                base_pickle_first_R = base_vp_pickles[vpkey]
                 print("tmp:", base_pickle_first_R['opts'].keys())
                 trf_specs = base_pickle_first_R['opts']['trf_specs']
                 trf_specs_save_bestfit_fields = [
@@ -1410,21 +1411,18 @@ def main():
                 print("nbar_of_cat:", nbar_of_cat)
                 #raise Exception("dbg")
 
-                Rsmooth = Rsmooth_lst[-1]
-                tmp_key = stacked_pickles[(Rsmooth,)]['Pkmeas'].keys()[0]
-                Nsims = stacked_pickles[(
-                    Rsmooth,)]['Pkmeas'][tmp_key]['k'].shape[0]
+                tmp_key = stacked_pickles['Pkmeas'].keys()[0]
+                Nsims = stacked_pickles['Pkmeas'][tmp_key]['k'].shape[0]
                 print("Nsims:", Nsims)
                 assert Nsims == len(sim_seeds)
 
                 N_ortho_iter = base_pickle_opts['N_ortho_iter_for_trf_fcns']
 
                 for tfcounter, tf in enumerate(trf_specs[:1]):
-                    for icounter, Rsmooth in enumerate(Rsmooth_lst[:1]):
-                        tmp_key = stacked_pickles[(
-                            Rsmooth,)]['Pkmeas'].keys()[0]
+                    if True:
+                        tmp_key = stacked_pickles['Pkmeas'].keys()[0]
                         kvec = np.mean(
-                            stacked_pickles[(Rsmooth,)]['Pkmeas'][tmp_key]['k'],
+                            stacked_pickles['Pkmeas'][tmp_key]['k'],
                             axis=0)
 
                 # CIC window (eq. 21 from jing et al https://arxiv.org/pdf/astro-ph/0409240.pdf)
@@ -1440,7 +1438,7 @@ def main():
                     np.pi * mykvec / (2.0 * k_nyq)))**2
 
                 for tfcounter, tf in enumerate(trf_specs):
-                    for icounter, Rsmooth in enumerate(Rsmooth_lst):
+                    if True:
 
                         # skip cubic bias for first few mass bins b/c makes no difference
                         if tf.save_bestfit_field in [
@@ -1450,12 +1448,11 @@ def main():
                             if iM in [0, 1]:
                                 continue
 
-                        tmp_key = stacked_pickles[(
-                            Rsmooth,)]['Pkmeas'].keys()[0]
+                        tmp_key = stacked_pickles['Pkmeas'].keys()[0]
                         kvec = np.mean(
-                            stacked_pickles[(Rsmooth,)]['Pkmeas'][tmp_key]['k'],
+                            stacked_pickles['Pkmeas'][tmp_key]['k'],
                             axis=0)
-                        Pks = stacked_pickles[(Rsmooth,)]['Pkmeas']
+                        Pks = stacked_pickles['Pkmeas']
                         id1 = tf.save_bestfit_field
                         id2 = tf.target_field
                         lw = 2
@@ -1469,16 +1466,10 @@ def main():
                         else:
                             raise Exception("Invalid plt_type %s" %
                                             str(plt_type))
-                        if len(Rsmooth_lst) > 1:
-                            label = '%s, $R=$%g' % (get_texlabel(
-                                tf.save_bestfit_field,
-                                include_data_label=include_data_label), Rsmooth)
-                            col = constants.oranges[-2 - icounter]
-                        else:
-                            label = '%s' % get_texlabel(
-                                tf.save_bestfit_field,
-                                include_data_label=include_data_label)
-                            col = 'k'
+                        label = '%s' % get_texlabel(
+                            tf.save_bestfit_field,
+                            include_data_label=include_data_label)
+                        col = 'k'
                         if tf.save_bestfit_field in manual_plot_kwargs:
                             plt_kwargs = manual_plot_kwargs[
                                 tf.save_bestfit_field]
@@ -1572,7 +1563,7 @@ def main():
                             for fitspec in trf_fcn_fitspecs:
                                 # plot using fitted_stacked_pickles
                                 fitted_Pks = fitted_stacked_pickles[
-                                    fitspec['name']][(Rsmooth,)]['Pkmeas']
+                                    fitspec['name']]['Pkmeas']
                                 ymat = (1.0 - fitted_Pks[(id1, id2)].P**2 /
                                         (fitted_Pks[(id1, id1)].P * fitted_Pks[
                                             (id2, id2)].P))
@@ -1608,7 +1599,7 @@ def main():
                             #if tf.target_field in ['delta_h','delta_h_WEIGHT_M1']:
                             my_one_over_nbar = 1.0 / nbar_of_cat['delta_h']
                             Ptarget = np.mean(
-                                stacked_pickles[(Rsmooth_lst[0],)]['Pkmeas'][(
+                                stacked_pickles['Pkmeas'][(
                                     tf.target_field, tf.target_field)]['P'],
                                 axis=0)
                             if plt_type == '1mr2':
