@@ -9,7 +9,8 @@ def get_pickle_fname():
 
     # Run A1: Quadratic bias model
     # M=12.8-13.8, Ngrid=64, seeds 400,403
-    fname = 'main_calc_Perr_2019_May_10_14:50:00_time1557499800.dill'
+    #fname = 'main_calc_Perr_2019_May_10_14:50:00_time1557499800.dill' # old
+    fname = 'main_calc_Perr_2019_May_15_17:39:57_time1557941997.dill'
 
 
     plot_opts = {}

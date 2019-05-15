@@ -574,13 +574,13 @@ def main():
             }
         #'ls': (0, [6,3]),
 
-    # #################################################################################
+    # ##########################################################################
     # START PROGRAM
-    # #################################################################################
+    # ##########################################################################
 
-    # #################################################################################
+    # ##########################################################################
     # vary params and stack on realiaztions
-    # #################################################################################
+    # ##########################################################################
 
     ## default args for vary base params and stack
     default_stack_and_vary_kwargs = dict(
@@ -599,9 +599,9 @@ def main():
         get_in_path=get_in_path)
 
     if True:
-        # #################################################################################
+        # ######################################################################
         # PLOT Perr/P_poisson for different halo mass bins
-        # #################################################################################
+        # ######################################################################
 
         # '2x2' or '4x1'
         layout = '2x2'
@@ -708,6 +708,7 @@ def main():
             #raise Exception("dbg")
 
             #Rsmooth = Rsmooth_lst[-1]
+            print('Pkmeas keys:\n', stacked_pickles['Pkmeas'].keys())
             tmp_key = stacked_pickles['Pkmeas'].keys()[0]
             Nsims = stacked_pickles['Pkmeas'][tmp_key]['k'].shape[0]
             print("Nsims:", Nsims)
@@ -722,7 +723,8 @@ def main():
                     stacked_pickles['Pkmeas'][tmp_key]['k'],
                     axis=0)
 
-            # CIC window (eq. 21 from jing et al https://arxiv.org/pdf/astro-ph/0409240.pdf)
+            # CIC window (eq. 21 from jing et al 
+            # https://arxiv.org/pdf/astro-ph/0409240.pdf)
             Delta_x = base_pickle_opts['sim_opts'].boxsize / float(
                 base_pickle_opts['grid_opts'].Ngrid)
             k_nyq = np.pi / Delta_x
@@ -734,9 +736,9 @@ def main():
             eval_Pk_CIC_at_kvec = lambda mykvec: 1.0 - 2. / 3. * (np.sin(
                 np.pi * mykvec / (2.0 * k_nyq)))**2
 
-            # #################################################################################
+            # ##################################################################
             # Fit transfer functions
-            # #################################################################################
+            # ##################################################################
             if trf_fcn_fitspecs != []:
                 fitted_stacked_pickles = fit_trf_fcns.do_fit_trf_fcns(
                     stacked_pickles=stacked_pickles,
