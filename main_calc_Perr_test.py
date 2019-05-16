@@ -1,22 +1,14 @@
 from __future__ import print_function, division
 from argparse import ArgumentParser
-from collections import namedtuple, OrderedDict
-import cPickle
+from collections import OrderedDict
 import numpy as np
-import os
-import sys
 
-from lsstools import combine_fields_to_match_target as combine_fields
 from lsstools import parameters
 from lsstools import parameters_ms_gadget
-from lsstools.cosmo_model import CosmoModel
-from lsstools.gen_cosmo_fcns import generate_calc_Da
 from lsstools.model_spec import *
-from lsstools.pickle_utils.io import Pickler
-from main_calc_Perr import calc_Perr
+import model_error
 from nbodykit import CurrentMPIComm, logging, setup_logging
-import path_utils
-import utils
+
 
 def main():
     """
@@ -134,7 +126,7 @@ def main():
 
 
     # Run the program given the above opts.
-    outdict = calc_Perr(opts)
+    outdict = model_error.calculate_model_error(opts)
 
 
     # Compare vs expected result.
