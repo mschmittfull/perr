@@ -4,6 +4,7 @@ import os
 from lsstools import combine_fields_to_match_target as combine_fields
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import calc_f_log_growth_rate, generate_calc_Da
+from lsstools import model_spec
 from lsstools.pickle_utils.io import Pickler
 from nbodykit import CurrentMPIComm, logging, setup_logging
 import path_utils
@@ -51,7 +52,7 @@ def calculate_model_error(opts):
     comm = CurrentMPIComm.get()
     logger = logging.getLogger('PerrCalc')
 
-    check_trf_specs_consistency(opts['trf_specs'])
+    model_spec.check_trf_specs_consistency(opts['trf_specs'])
 
   
     # Init Pickler instance to save pickle later (this will init pickle fname)
