@@ -156,6 +156,5 @@ def main():
             raise Exception('Test failed')
 
 
-
 if __name__ == '__main__':
     main()
