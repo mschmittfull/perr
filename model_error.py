@@ -5,7 +5,7 @@ from lsstools import combine_fields_to_match_target as combine_fields
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import calc_f_log_growth_rate, generate_calc_Da
 from lsstools import model_spec
-from lsstools.pickle_utils.io import Pickler
+from lsstools.results_db.io import Pickler
 from nbodykit import CurrentMPIComm, logging, setup_logging
 import path_utils
 import utils

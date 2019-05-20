@@ -107,7 +107,7 @@ def main():
                 'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ'))
 
     # Save results
-    opts['keep_pickle'] = True
+    opts['keep_pickle'] = False
     opts['pickle_file_format'] = 'dill'
     opts['pickle_path'] = '$SCRATCH/perr/pickle/'
 
