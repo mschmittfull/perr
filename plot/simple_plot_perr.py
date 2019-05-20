@@ -352,8 +352,7 @@ def main():
                 elif tf.target_field == 'delta_h_WEIGHT_M1':
                     label = '$P_{\\delta_{M_h}}$'
                 else:
-                    label = 'P_{%s%s}' % (get_texlabel(
-                        tf.target_field), get_texlabel(tf.target_field))
+                    label = 'P_{%s}' % tf.target_field
                 ax.plot(kvec,
                         np.mean(ymat, axis=0) / my_one_over_nbar,
                         lw=2,
