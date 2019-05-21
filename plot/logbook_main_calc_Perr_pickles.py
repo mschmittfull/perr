@@ -12,9 +12,6 @@ def get_pickle_fname():
     #fname = 'main_calc_Perr_2019_May_10_14:50:00_time1557499800.dill' # old
     fname = 'main_calc_Perr_2019_May_15_17:39:57_time1557941997.dill'
 
-    # Run A5: Same as A3b but with refactored code and dill files
-    fname = 'main_calc_Perr_2019_May_17_04:02:13_time1558065733.dill'
-
 
     plot_opts = {}
     return {'fname': fname, 'plot_opts': plot_opts}

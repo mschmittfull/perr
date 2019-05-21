@@ -64,7 +64,7 @@ def main():
         base_fname=fname,
         comp_key='opts',
         fname_pattern=r'^main_calc_Perr.*.dill$',
-        ignore_pickle_keys=['pickle_fname', 'out_rho_path', 'in_path'],
+        ignore_pickle_keys=['pickle_fname', 'out_rho_path', 'in_path', 'cats'],
         skip_keys_when_stacking=['opts', 'flat_opts', 'cat_infos'],
         return_base_vp_pickles=True,
         return_base_vp_pickle_opts=True,
@@ -143,7 +143,6 @@ def main():
         print("Trf specs:", trf_specs)
         print("\ntrf_specs_save_bestfit_fields:\n",
               "\n".join(trf_specs_save_bestfit_fields))
-        #raise Exception("dbg")
 
         # attempt to extract number density:
         nbar_of_cat = OrderedDict()
@@ -156,9 +155,7 @@ def main():
                 elif cat_info['simple'].has_key('nbar'):
                     nbar_of_cat[catid] = cat_info['simple']['nbar']
         print("nbar_of_cat:", nbar_of_cat)
-        #raise Exception("dbg")
 
-        #Rsmooth = Rsmooth_lst[-1]
         print('Pkmeas keys:\n', stacked_pickles['Pkmeas'].keys())
         tmp_key = stacked_pickles['Pkmeas'].keys()[0]
         Nsims = stacked_pickles['Pkmeas'][tmp_key]['k'].shape[0]
@@ -168,7 +165,6 @@ def main():
         N_ortho_iter = base_pickle_opts['trf_fcn_opts'].N_ortho_iter
 
         for tfcounter, tf in enumerate(trf_specs[:1]):
-            #for icounter, Rsmooth in enumerate(Rsmooth_lst[:1]):
             tmp_key = stacked_pickles['Pkmeas'].keys()[0]
             kvec = np.mean(
                 stacked_pickles['Pkmeas'][tmp_key]['k'],
