@@ -8,47 +8,61 @@ from shutil import rmtree
 from lsstools import nbkit03_utils, paint_utils
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import calc_f_log_growth_rate, generate_calc_Da
+from nbodykit import CurrentMPIComm, logging
 
 
-def shift_catalog_by_psi_grid(
-    Nptcles_per_dim=None,
-    out_Ngrid=None,
-    sim_seed=None,
+def weigh_and_shift_uni_cats(
+    Nptcles_per_dim,
+    out_Ngrid,
+    densities_to_shift,
+    displacement_source=None,
     PsiOrder=1,
     RSD=False,
     RSD_line_of_sight=None,
-    verbose=False,
-    Nmesh=None,
-    plot_slices=False,
-    sim_name=False,
-    boxsize=None,
     basepath=None,
     out_scale_factor=None,
     internal_scale_factor_for_weights=None,
     weighted_CIC_mode=None,
-    densities_to_shift=None, # dicts specifying which fields to load from disk
-    displacement_source=None,
+    boxsize=None,
+    Nmesh_orig=None,
     cosmo_params=None,
-    save_result=False
+    save_result=False,
+    verbose=False,
+    plot_slices=False,
     ):
     """
     Do the following: 
     - create uniform catalog
-    - load deltalin or other density delta on grid
+    - load deltalin or other density delta on grid (given by densities_to_shift)
     - weigh ptcles in uniform catalog by 1+delta
-    - compute smoothed Psi_lin on grid (interpolating to ptcle positions)
+    - compute smoothed Psi_lin on grid (=evaluated at ptcle positions)
     - shift (displace) particles by Psi
+    - compute density of shifted catalog using weighted CIC
     - save shifted catalog
-    """
 
+    Parameters
+    ----------
+    Nptcles_per_dim : int
+        Number of particles per dimension to use for uniform catalog
+
+    out_Ngrid : int
+        Number of cells per dimension for the output grid to which particles are
+        CIC interpolated.
+
+    densities_to_shift : dict
+        Dicts specifying which fields to load from disk. Specify file name etc.
+    
+    Nmesh_orig : int
+        Only used for output file name. Number of cells per dimension of the 
+        original field that is shifted and of the displacement field.
+
+    displacement_source : dict
+        Dict specifying how to compute displacement field.
+    """
     # init MPI
-    from nbodykit import CurrentMPIComm
     comm = CurrentMPIComm.get()
     print("%d: Greetings from rank %d" % (comm.rank, comm.rank))
-
-    from nbodykit import logging
     logger = logging.getLogger("shift")
-
 
     if RSD:
         # calculate f
@@ -64,106 +78,13 @@ def shift_catalog_by_psi_grid(
     # loop over all densities to be shifted (load from disk)
     for specs_of_density_to_shift in densities_to_shift:
 
-        # ################################################################################
-        # Generate uniform catalog with Nptcles_per_dim^3 particles on regular grid
-        # ################################################################################
 
-        if True:
-            # use pmesh generate_uniform_particle_grid
-            # http://rainwoodman.github.io/pmesh/pmesh.pm.html?highlight=readout#pmesh.pm.ParticleMesh.generate_uniform_particle_grid
-            pmesh = ParticleMesh(BoxSize=boxsize,
-                                 Nmesh=[
-                                     Nptcles_per_dim,
-                                     Nptcles_per_dim,
-                                     Nptcles_per_dim
-                                 ])
-            ptcles = pmesh.generate_uniform_particle_grid(shift=0.0, dtype='f8')
-            #print("type ptcles", type(ptcles), ptcles.shape)
-            #print("head ptcles:", ptcles[:5,:])
-
-            dtype = np.dtype([('Position', ('f8', 3))])
-
-            # number of rows is given by number of ptcles on this rank
-            uni_cat_array = np.empty((ptcles.shape[0],), dtype=dtype)
-            uni_cat_array['Position'] = ptcles
-
-            uni_cat = ArrayCatalog(uni_cat_array,
-                                   comm=None,
-                                   BoxSize=boxsize * np.ones(3),
-                                   Nmesh=[
-                                       Nptcles_per_dim,
-                                       Nptcles_per_dim,
-                                       Nptcles_per_dim
-                                   ])
-
-            print("%d: local Nptcles=%d, global Nptcles=%d" %
-                  (comm.rank, uni_cat.size, uni_cat.csize))
-
-            del ptcles
-            del uni_cat_array
-
-        else:
-
-            # MS: own silly serial code to generate regular grid
-            if comm.rank == 0:
-                # Code copied from do_rec_v1.py and adopted
-
-                # Note that nbkit UniformCatalog is random catalog, but we want a catalog
-                # where each ptcle sits at grid points of a regular grid.
-                # This is what we call 'regular uniform' catalog.
-                Np = Nptcles_per_dim
-                dtype = np.dtype([('Position', ('f8', 3))])
-                # Have Np**3 particles, and each particle has position x,y,z and weight 'Weight'
-                uni_cat_array = np.empty((Np**3,), dtype=dtype)
-
-                # x components in units such that box ranges from 0 to 1. Note dx=1/Np.
-                #x_components_1d = np.linspace(0.0, (Np-1)*(L/float(Np)), num=Np, endpoint=True)/L
-                x_components_1d = np.linspace(0.0, (Np - 1) / float(Np),
-                                              num=Np,
-                                              endpoint=True)
-                ones_1d = np.ones(x_components_1d.shape)
-
-                # Put particles on the regular grid
-                print("%d: Fill regular uniform catalog" % comm.rank)
-                uni_cat_array['Position'][:, 0] = np.einsum(
-                    'a,b,c->abc', x_components_1d, ones_1d, ones_1d).reshape(
-                        (Np**3,))
-                uni_cat_array['Position'][:, 1] = np.einsum(
-                    'a,b,c->abc', ones_1d, x_components_1d, ones_1d).reshape(
-                        (Np**3,))
-                uni_cat_array['Position'][:, 2] = np.einsum(
-                    'a,b,c->abc', ones_1d, ones_1d, x_components_1d).reshape(
-                        (Np**3,))
-                print("%d: Done filling regular uniform catalog" % comm.rank)
-
-                # in nbkit0.3 units must be in Mpc/h
-                uni_cat_array['Position'] *= boxsize
-
-            else:
-                uni_cat_array = None
-
-            # Scatter across all ranks
-            print("%d: Scatter array" % comm.rank)
-            from nbodykit.utils import ScatterArray
-            uni_cat_array = ScatterArray(uni_cat_array,
-                                         comm,
-                                         root=0,
-                                         counts=None)
-            print("%d: Scatter array done. Shape: %s" %
-                  (comm.rank, str(uni_cat_array.shape)))
-
-            # Save in ArrayCatalog object
-            uni_cat = ArrayCatalog(uni_cat_array)
-            uni_cat.attrs['BoxSize'] = np.ones(3) * boxsize
-            uni_cat.attrs['Nmesh'] = np.ones(3) * Nptcles_per_dim
-            uni_cat.attrs['Nmesh_internal'] = np.ones(3) * Nmesh
-
-        # ################################################################################
+        # ######################################################################
         # Load density to be shifted and weigh particles by delta
-        # ################################################################################
+        # ######################################################################
 
-        # todo: could create linearmesh on the fly rather than reading from disk. but also fine
-        # to load from disk for now.
+        # todo: could create linearmesh on the fly rather than reading from disk.
+        # but also fine to load from disk for now.
 
         # get field from bigmesh file; rescale to delta at internal_scale_factor_for_weights.
         # note that we get delta, not 1+delta.
@@ -209,43 +130,11 @@ def shift_catalog_by_psi_grid(
         #     comm.rank, str(type(rfield_density_to_shift)), str(rfield_density_to_shift.shape),
         #     np.sqrt(np.mean(rfield_density_to_shift**2))))
 
-        # Set weight of particles in uni_cat to delta (interpolated to ptcle positions)
-        nbkit03_utils.interpolate_pm_rfield_to_catalog(
-            rfield_density_to_shift, uni_cat, catalog_column_to_save_to='Mass')
-        #del rfield_density_to_shift
-        print("%d: rms Mass: %g" %
-              (comm.rank, np.sqrt(np.mean(np.array(uni_cat['Mass'])**2))))
-        #uni_cat['Mass'] *= 0.0
-
-        if plot_slices:
-            # paint the original uni_cat to a grid and plot slice
-            import matplotlib.pyplot as plt
-
-            tmp_meshsource = uni_cat.to_mesh(Nmesh=out_Ngrid,
-                                             value='Mass',
-                                             window='cic',
-                                             compensated=False,
-                                             interlaced=False)
-            # paint to get delta(a_internal)
-            tmp_outfield = tmp_meshsource.paint(mode='real')
-            # linear rescale factor from internal_scale_factor_for_weights to out_scale_factor
-            rescalefac = nbkit03_utils.linear_rescale_fac(
-                internal_scale_factor_for_weights,
-                out_scale_factor,
-                cosmo_params=cosmo_params)
-            tmp_outfield = 1.0 + rescalefac * (tmp_outfield - 1.0)
-            tmp_mesh = FieldMesh(tmp_outfield)
-            plt.imshow(tmp_mesh.preview(Nmesh=32, axes=(0, 1)))
-            if comm.rank == 0:
-                plt_fname = 'inmesh_Np%d_Nm%d_Ng%d.pdf' % (
-                    Nptcles_per_dim, Nmesh, out_Ngrid)
-                plt.savefig(plt_fname)
-                print("Made %s" % plt_fname)
-            del tmp_meshsource, rescalefac, tmp_outfield, tmp_mesh
 
         # ######################################################################
         # Compute displacement Psi on grid, interpolate to particle positions, 
-        # and shift them. ########################################################################
+        # and shift them. 
+        # ######################################################################
 
         # get displacement source field from bigmesh file; scale to out_scale_factor
         # to make sure we use full displacement up to low z of output.
@@ -272,124 +161,334 @@ def shift_catalog_by_psi_grid(
                     RSD_line_of_sight=RSD_line_of_sight,
                     RSD_f_log_growth=f_log_growth)
 
-        # Shift uniform catalog particles by Psi (changes uni_cat)
-        nbkit03_utils.shift_catalog_by_psi_grid(
-            cat=uni_cat,
-            in_displacement_rfields=Psi_rfields,
-            pos_column='Position',
-            pos_units='Mpc/h',
-            displacement_units='Mpc/h',
+        # ######################################################################
+        # Shift uniform catalog weighted by delta_for_weights and get shifted
+        # density.
+        # ######################################################################
+
+        # get delta_shifted
+        delta_shifted, attrs = weigh_and_shift_uni_cat(
+            delta_for_weights=rfield_density_to_shift,
+            displacements=Psi_rfields,
+            Nptcles_per_dim=Nptcles_per_dim,
+            out_Ngrid=out_Ngrid,
             boxsize=boxsize,
-            verbose=verbose)
-        #del Psi_rfields
+            internal_scale_factor_for_weights=internal_scale_factor_for_weights,
+            out_scale_factor=out_scale_factor,
+            cosmo_params=cosmo_params,
+            weighted_CIC_mode=weighted_CIC_mode,
+            plot_slices=plot_slices,
+            verbose=verbose
+        )
 
-        # ######################################################################
-        # paint shifted catalog to grid, using field_to_shift as weights
-        # ######################################################################
-
-        print("%d: paint shifted catalog to grid using mass weights" %
-              comm.rank)
-
-        out_delta, meshsource_attrs = paint_utils.weighted_paint_cat_to_delta(
-            uni_cat,
-            weight='Mass',
-            Nmesh=out_Ngrid,
-            weighted_paint_mode=weighted_CIC_mode,
-            verbose=verbose,
-            to_mesh_kwargs={
-                'window': 'cic',
-                'compensated': False,
-                'interlaced': False
-            })
-
-        # ######################################################################
-        # rescale to output redshift
-        # ######################################################################
-
-        # linear rescale factor from internal_scale_factor_for_weights to out_scale_factor
-        rescalefac = nbkit03_utils.linear_rescale_fac(
-            internal_scale_factor_for_weights,
-            out_scale_factor,
-            cosmo_params=cosmo_params)
-
-        out_delta *= rescalefac
-
-        # print some info:
+        # print cmean
+        shifted_cmean = delta_shifted.cmean()
         if comm.rank == 0:
-            print("%d: Linear rescalefac from a=%g to a=%g, rescalefac=%g" %
-                  (comm.rank, internal_scale_factor_for_weights,
-                   out_scale_factor, rescalefac))
+            print("%d: delta_shifted cmean:" % comm.rank, shifted_cmean)
 
-        if verbose:
-            print("%d: out_delta: min, mean, max, rms(x-1):" % comm.rank,
-                  np.min(out_delta), np.mean(out_delta), np.max(out_delta),
-                  np.mean((out_delta - 1.)**2)**0.5)
 
-        # get 1+deta mesh from field
-        outmesh = FieldMesh(1 + out_delta)
-
-        # print some info: this makes code never finish (race condition maybe?)
-        #nbkit03_utils.rfield_print_info(outfield, comm, 'outfield: ')
-
-        # copy MeshSource attrs
-        for k, v in meshsource_attrs.items():
-            outmesh.attrs['MeshSource_%s' % k] = v
-        if comm.rank == 0:
-            print("outmesh.attrs:\n", outmesh.attrs)
-
+        # ######################################################################
         # save to bigfile
-        if not RSD:
-            RSDstring = ''
-        else:
-            if RSD_line_of_sight in [[0, 0, 1], [0, 1, 0], [1, 0, 0]]:
-                RSDstring = '_RSD%d%d%d' % (RSD_line_of_sight[0],
-                                            RSD_line_of_sight[1],
-                                            RSD_line_of_sight[2])
-            else:
-                # actually not implemented above
-                RSDstring = '_RSD_%.2f_%.2f_%.2f.hdf5' % (
-                    RSD_line_of_sight[0], RSD_line_of_sight[1],
-                    RSD_line_of_sight[2])
-
-        out_fname = os.path.join(
-            basepath,
-            '%s_int%s_ext%s_SHIFTEDBY_%s%s_a%.4f_Np%d_Nm%d_Ng%d_CIC%s%s' %
-            (specs_of_density_to_shift['id_for_out_fname'],
-             smoothing_str(
-                 specs_of_density_to_shift.get('smoothing_quadratic_source',
-                                               None)),
-             smoothing_str(specs_of_density_to_shift['external_smoothing']),
-             displacement_source['id_for_out_fname'],
-             smoothing_str(displacement_source['smoothing']),
-             out_scale_factor, Nptcles_per_dim, Nmesh,
-             out_Ngrid, weighted_CIC_mode, RSDstring))
-
-        if comm.rank == 0:
-            print("Writing to %s" % out_fname)
-
+        # ######################################################################
         if save_result:
-            outmesh.save(out_fname, mode='real')
+
+            if not RSD:
+                RSDstring = ''
+            else:
+                if RSD_line_of_sight in [[0, 0, 1], [0, 1, 0], [1, 0, 0]]:
+                    RSDstring = '_RSD%d%d%d' % (RSD_line_of_sight[0],
+                                                RSD_line_of_sight[1],
+                                                RSD_line_of_sight[2])
+                else:
+                    # actually not implemented above
+                    RSDstring = '_RSD_%.2f_%.2f_%.2f.hdf5' % (
+                        RSD_line_of_sight[0], RSD_line_of_sight[1],
+                        RSD_line_of_sight[2])
+
+            out_fname = os.path.join(
+                basepath,
+                '%s_int%s_ext%s_SHIFTEDBY_%s%s_a%.4f_Np%d_Nm%d_Ng%d_CIC%s%s' %
+                (specs_of_density_to_shift['id_for_out_fname'],
+                 smoothing_str(
+                     specs_of_density_to_shift.get('smoothing_quadratic_source',
+                                                   None)),
+                 smoothing_str(specs_of_density_to_shift['external_smoothing']),
+                 displacement_source['id_for_out_fname'],
+                 smoothing_str(displacement_source['smoothing']),
+                 out_scale_factor, Nptcles_per_dim, Nmesh_orig,
+                 out_Ngrid, weighted_CIC_mode, RSDstring))
+
             if comm.rank == 0:
-                print("Wrote %s" % out_fname)
+                print("Writing to %s" % out_fname)
+
+                outmesh = FieldMesh(1+delta_shifted)
+                # copy MeshSource attrs
+                for k, v in attrs.items():
+                    outmesh.attrs['MeshSource_%s' % k] = v
+                if comm.rank == 0:
+                    print("outmesh.attrs:\n", outmesh.attrs)
+
+                outmesh.save(out_fname, mode='real')
+                if comm.rank == 0:
+                    print("Wrote %s" % out_fname)
         else:            
             if comm.rank == 0:
                 print("Not writing result to disk")
 
-        # must call cmean collectively
-        out_cmean = out_delta.cmean()
-        if comm.rank == 0:
-            print("%d: out_delta cmean:" % comm.rank, out_cmean)
 
-        # try to plot slice
+        # optionally plot slice
         if plot_slices:
             plt.imshow(outmesh.preview(Nmesh=32, axes=(0, 1)))
             if comm.rank == 0:
                 plt_fname = 'outmesh_Np%d_Nm%d_Ng%d.pdf' % (
-                    Nptcles_per_dim, Nmesh, out_Ngrid)
+                    Nptcles_per_dim, Nmesh_orig, out_Ngrid)
                 plt.savefig(plt_fname)
                 print("Made %s" % plt_fname)
 
-        return outmesh
+
+def weigh_and_shift_uni_cat(
+    delta_for_weights,
+    displacements,
+    Nptcles_per_dim,
+    out_Ngrid,
+    boxsize,
+    internal_scale_factor_for_weights=None,
+    out_scale_factor=None,
+    cosmo_params=None,
+    weighted_CIC_mode=None,
+    uni_cat_generator='pmesh',
+    plot_slices=False,
+    verbose=False
+    ):
+    """
+    Make uniform catalog, weigh by delta_for_weights, displace by displacements
+    and interpolate to grid which we return.
+
+    Parameters
+    ----------
+    delta_for_weights : pmesh.pm.RealField object
+        Particles are weighted by 1+delta_for_weights
+
+    displacements : list
+        [Psi_x, Psi_y, Psi_z] where Psi_i are pmesh.pm.RealField objects,
+        holding the displacement field in different directions (on the grid).
+
+    uni_cat_generator : string
+        If 'pmesh', use pmesh for generating uniform catalog.
+        If 'manual', use an old serial code.
+
+    Returns
+    -------
+    delta_shifted : FieldMesh object
+        Density delta_shifted of shifted weighted particles.
+
+    attrs : meshsource attrs
+    """
+    comm = CurrentMPIComm.get()
+
+    # ######################################################################
+    # Generate uniform catalog with Nptcles_per_dim^3 particles on regular 
+    # grid
+    # ######################################################################
+
+    if uni_cat_generator == 'pmesh':
+        # use pmesh generate_uniform_particle_grid
+        # http://rainwoodman.github.io/pmesh/pmesh.pm.html?highlight=
+        # readout#pmesh.pm.ParticleMesh.generate_uniform_particle_grid
+        pmesh = ParticleMesh(BoxSize=boxsize,
+                             Nmesh=[
+                                 Nptcles_per_dim,
+                                 Nptcles_per_dim,
+                                 Nptcles_per_dim
+                             ])
+        ptcles = pmesh.generate_uniform_particle_grid(shift=0.0, dtype='f8')
+        #print("type ptcles", type(ptcles), ptcles.shape)
+        #print("head ptcles:", ptcles[:5,:])
+
+        dtype = np.dtype([('Position', ('f8', 3))])
+
+        # number of rows is given by number of ptcles on this rank
+        uni_cat_array = np.empty((ptcles.shape[0],), dtype=dtype)
+        uni_cat_array['Position'] = ptcles
+
+        uni_cat = ArrayCatalog(uni_cat_array,
+                               comm=None,
+                               BoxSize=boxsize * np.ones(3),
+                               Nmesh=[
+                                   Nptcles_per_dim,
+                                   Nptcles_per_dim,
+                                   Nptcles_per_dim
+                               ])
+
+        print("%d: local Nptcles=%d, global Nptcles=%d" %
+              (comm.rank, uni_cat.size, uni_cat.csize))
+
+        del ptcles
+        del uni_cat_array
+
+
+    elif uni_cat_generator == 'manual':
+
+        # Old serial code to generate regular grid and scatter across ranks.
+        if comm.rank == 0:
+            # Code copied from do_rec_v1.py and adopted
+
+            # Note that nbkit UniformCatalog is random catalog, but we want a catalog
+            # where each ptcle sits at grid points of a regular grid.
+            # This is what we call 'regular uniform' catalog.
+            Np = Nptcles_per_dim
+            dtype = np.dtype([('Position', ('f8', 3))])
+            # Have Np**3 particles, and each particle has position x,y,z and weight 'Weight'
+            uni_cat_array = np.empty((Np**3,), dtype=dtype)
+
+            # x components in units such that box ranges from 0 to 1. Note dx=1/Np.
+            #x_components_1d = np.linspace(0.0, (Np-1)*(L/float(Np)), num=Np, endpoint=True)/L
+            x_components_1d = np.linspace(0.0, (Np - 1) / float(Np),
+                                          num=Np,
+                                          endpoint=True)
+            ones_1d = np.ones(x_components_1d.shape)
+
+            # Put particles on the regular grid
+            print("%d: Fill regular uniform catalog" % comm.rank)
+            uni_cat_array['Position'][:, 0] = np.einsum(
+                'a,b,c->abc', x_components_1d, ones_1d, ones_1d).reshape(
+                    (Np**3,))
+            uni_cat_array['Position'][:, 1] = np.einsum(
+                'a,b,c->abc', ones_1d, x_components_1d, ones_1d).reshape(
+                    (Np**3,))
+            uni_cat_array['Position'][:, 2] = np.einsum(
+                'a,b,c->abc', ones_1d, ones_1d, x_components_1d).reshape(
+                    (Np**3,))
+            print("%d: Done filling regular uniform catalog" % comm.rank)
+
+            # in nbkit0.3 units must be in Mpc/h
+            uni_cat_array['Position'] *= boxsize
+
+        else:
+            uni_cat_array = None
+
+        # Scatter across all ranks
+        print("%d: Scatter array" % comm.rank)
+        from nbodykit.utils import ScatterArray
+        uni_cat_array = ScatterArray(uni_cat_array,
+                                     comm,
+                                     root=0,
+                                     counts=None)
+        print("%d: Scatter array done. Shape: %s" %
+              (comm.rank, str(uni_cat_array.shape)))
+
+        # Save in ArrayCatalog object
+        uni_cat = ArrayCatalog(uni_cat_array)
+        uni_cat.attrs['BoxSize'] = np.ones(3) * boxsize
+        uni_cat.attrs['Nmesh'] = np.ones(3) * Nptcles_per_dim
+        uni_cat.attrs['Nmesh_internal'] = np.ones(3) * Nmesh_orig
+
+    else:
+        raise Exception('Invalid uni_cat_generator %s' % uni_cat_generator)
+
+
+    ########################################################################
+    # Set weight of particles in uni_cat to delta (interpolated to ptcle 
+    # positions)
+    ########################################################################
+    nbkit03_utils.interpolate_pm_rfield_to_catalog(
+        delta_for_weights, uni_cat, catalog_column_to_save_to='Mass')
+
+    print("%d: rms Mass: %g" %
+          (comm.rank, np.sqrt(np.mean(np.array(uni_cat['Mass'])**2))))
+
+    # optionally plot weighted uniform cat before shifting
+    if plot_slices:
+        # paint the original uni_cat to a grid and plot slice
+        import matplotlib.pyplot as plt
+
+        tmp_meshsource = uni_cat.to_mesh(Nmesh=out_Ngrid,
+                                         value='Mass',
+                                         window='cic',
+                                         compensated=False,
+                                         interlaced=False)
+        # paint to get delta(a_internal)
+        tmp_outfield = tmp_meshsource.paint(mode='real')
+        # linear rescale factor from internal_scale_factor_for_weights to 
+        # out_scale_factor
+        rescalefac = nbkit03_utils.linear_rescale_fac(
+            internal_scale_factor_for_weights,
+            out_scale_factor,
+            cosmo_params=cosmo_params)
+        tmp_outfield = 1.0 + rescalefac * (tmp_outfield - 1.0)
+        tmp_mesh = FieldMesh(tmp_outfield)
+        plt.imshow(tmp_mesh.preview(Nmesh=32, axes=(0, 1)))
+        if comm.rank == 0:
+            plt_fname = 'inmesh_Np%d_Nm%d_Ng%d.pdf' % (
+                Nptcles_per_dim, Nmesh_orig, out_Ngrid)
+            plt.savefig(plt_fname)
+            print("Made %s" % plt_fname)
+        del tmp_meshsource, rescalefac, tmp_outfield, tmp_mesh
+
+    # ######################################################################
+    # Shift uniform catalog particles by Psi (changes uni_cat)
+    # ######################################################################
+    nbkit03_utils.shift_catalog_by_psi_grid(
+        cat=uni_cat,
+        in_displacement_rfields=displacements,
+        pos_column='Position',
+        pos_units='Mpc/h',
+        displacement_units='Mpc/h',
+        boxsize=boxsize,
+        verbose=verbose)
+    #del Psi_rfields
+
+    # ######################################################################
+    # paint shifted catalog to grid, using field_to_shift as weights
+    # ######################################################################
+
+    print("%d: paint shifted catalog to grid using mass weights" %
+          comm.rank)
+
+    delta_shifted, attrs = paint_utils.weighted_paint_cat_to_delta(
+        uni_cat,
+        weight='Mass',
+        Nmesh=out_Ngrid,
+        weighted_paint_mode=weighted_CIC_mode,
+        verbose=verbose,
+        to_mesh_kwargs={
+            'window': 'cic',
+            'compensated': False,
+            'interlaced': False
+        })
+
+    # ######################################################################
+    # rescale to output redshift
+    # ######################################################################
+
+    # linear rescale factor from internal_scale_factor_for_weights to 
+    # out_scale_factor
+    rescalefac = nbkit03_utils.linear_rescale_fac(
+        internal_scale_factor_for_weights,
+        out_scale_factor,
+        cosmo_params=cosmo_params)
+
+    delta_shifted *= rescalefac
+
+    # print some info:
+    if comm.rank == 0:
+        print("%d: Linear rescalefac from a=%g to a=%g, rescalefac=%g" %
+              (comm.rank, internal_scale_factor_for_weights,
+               out_scale_factor, rescalefac))
+
+    if verbose:
+        print("%d: delta_shifted: min, mean, max, rms(x-1):" % comm.rank,
+              np.min(delta_shifted), np.mean(delta_shifted),
+              np.max(delta_shifted), np.mean((delta_shifted - 1.)**2)**0.5)
+
+    # get 1+deta mesh from field
+    #outmesh = FieldMesh(1 + out_delta)
+
+    # print some info: this makes code never finish (race condition maybe?)
+    #nbkit03_utils.rfield_print_info(outfield, comm, 'outfield: ')
+
+    return delta_shifted, attrs
+
 
 def smoothing_str(smoothing_dict):
     if smoothing_dict is None:

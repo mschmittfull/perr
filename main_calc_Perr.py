@@ -50,7 +50,9 @@ def main():
 
     # Bump this when changing code without changing options. Otherwise pickle
     # loading might wrongly read old pickles.
-    opts['main_calc_Perr_version'] = '0.2'
+    #opts['main_calc_Perr_version'] = '0.2'
+    opts['code_version_for_pickles'] = '0.2'
+
 
     # Simulation options. Will be used by path_utils to get input path, and
     # to compute deltalin at the right redshift.
@@ -106,7 +108,7 @@ def main():
                 'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ'))
 
     # Save results
-    opts['keep_pickle'] = True
+    opts['keep_pickle'] = False
     opts['pickle_file_format'] = 'dill'
     opts['pickle_path'] = '$SCRATCH/perr/pickle/'
 
@@ -124,7 +126,7 @@ def main():
     opts['cache_base_path'] = '$SCRATCH/perr/cache/'
 
     # Run the program given the above opts.
-    outdict = model_error.calculate_model_error(opts)
+    outdict = model_error.calculate_model_error(**opts)
 
 
 if __name__ == '__main__':

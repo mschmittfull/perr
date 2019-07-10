@@ -5,7 +5,7 @@ from nbodykit.lab import *
 import numpy as np
 import os
 
-from shift import shift_catalog_by_psi_grid
+from shift import weigh_and_shift_uni_cats
 
 def main():
     """
@@ -72,7 +72,7 @@ def main():
     opts['Nptcles_per_dim'] = cmd_args.Nptcles_per_dim
     opts['out_Ngrid'] = cmd_args.out_Ngrid
     #opts['plot_slices'] = cmd_args.plot_slices
-    opts['sim_seed'] = cmd_args.SimSeed
+    sim_seed = cmd_args.SimSeed
     opts['PsiOrder'] = cmd_args.PsiOrder
     opts['RSD'] = bool(cmd_args.RSD)
     opts['RSD_line_of_sight'] = [0, 0, 1]
@@ -93,11 +93,11 @@ def main():
         opts['plot_slices'] = False
 
     # ms_gadget L=500 sim
-    opts['sim_name'] = 'ms_gadget'
+    sim_name= 'ms_gadget'
     opts['boxsize'] = 500.0
     opts['basepath'] = os.path.expandvars(
         '$SCRATCH/lss/ms_gadget/run4/00000%d-01536-%.1f-wig/' %
-        (opts['sim_seed'], opts['boxsize']))
+        (sim_seed, opts['boxsize']))
 
     # Get deltalin at internal_scale_factor_for_weights, shift it by Psi(out_scale_factor),
     # and then rescale the result from internal_scale_factor_for_weights to out_scale_factor.
@@ -268,7 +268,8 @@ def main():
             }
         }
     elif opts['PsiOrder'] == 2:
-        # displace by Psi_2LPT[delta_lin] = ik/k^2 delta_lin(k) - 3/14 ik/k^2 G2[delta_lin](k)
+        # displace by Psi_2LPT[delta_lin] = ik/k^2 delta_lin(k) - 3/14 ik/k^2 
+        #                                   G2[delta_lin](k)
         opts['displacement_source'] = {
             'id_for_out_fname':
             'Psi2LPT_IC_LinearMesh',
@@ -286,7 +287,8 @@ def main():
         }
     # elif opts['PsiOrder'] == -2:
     #     # just to check sign of Psi^[2] is correct
-    #     # displace by -Psi_2LPT[delta_lin] = ik/k^2 delta_lin(k) + 3/14 ik/k^2 G2[delta_lin](k)
+    #     # displace by -Psi_2LPT[delta_lin] = ik/k^2 delta_lin(k) + 3/14 ik/k^2
+    #                                          G2[delta_lin](k)
     #     opts['displacement_source'] = {
     #         'id_for_out_fname': '-Psi2LPT_IC_LinearMesh',
     #         'Psi_type': '-2LPT',
@@ -298,22 +300,25 @@ def main():
     else:
         raise Exception("Invalid PsiOrder %s" % str(opts['PsiOrder']))
 
-    ## COSMOLOGY OPTIONS
-    if opts['sim_name'] in ['jerryou_baoshift', 'ms_gadget']:
+    # COSMOLOGY OPTIONS
+    if sim_name in ['jerryou_baoshift', 'ms_gadget']:
         opts['cosmo_params'] = dict(Om_m=0.307494,
                                     Om_L=1.0 - 0.307494,
                                     Om_K=0.0,
                                     Om_r=0.0,
                                     h0=0.6774)
 
-
+    # save result to bigfile on disk
     opts['save_result'] = True
 
-    # ################################################################################
-    # START PROGRAM
-    # ################################################################################
+    opts['Nmesh_orig'] = opts['Nmesh']
+    del opts['Nmesh']
 
-    outmesh = shift_catalog_by_psi_grid(**opts)
+    # ##########################################################################
+    # START PROGRAM
+    # ##########################################################################
+
+    outmesh = weigh_and_shift_uni_cats(**opts)
 
 
 if __name__ == '__main__':

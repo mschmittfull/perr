@@ -11,20 +11,57 @@ import path_utils
 import utils
 
 
-def calculate_model_error(opts):
+#def calculate_model_error(opts):
+def calculate_model_error(
+    sim_opts=None,
+    grid_opts=None,
+    power_opts=None,
+    trf_fcn_opts=None,
+    ext_grids_to_load=None,
+    cats=None,
+    trf_specs=None,
+    keep_pickle=None,
+    pickle_file_format=None,
+    pickle_path=None,
+    Pkmeas_helper_columns=None,
+    save_grids4plots=None,
+    grids4plots_base_path=None,
+    grids4plots_R=None,
+    cache_base_path=None,
+    RSDstrings=None,
+    code_version_for_pickles=None
+    ):
     """
-    Calculate the model error for all models specified in opts['trf_specs'].
+    Calculate the model error for all models specified by trf_specs.
+    """
 
-    TODO: use kwargs instead of large opts dictionary
-    """
+    # store opts in dict so we can save in pickle later
+    opts = dict(    
+        sim_opts=sim_opts,
+        grid_opts=grid_opts,
+        power_opts=power_opts,
+        trf_fcn_opts=trf_fcn_opts,
+        ext_grids_to_load=ext_grids_to_load,
+        cats=cats,
+        trf_specs=trf_specs,
+        keep_pickle=keep_pickle,
+        pickle_file_format=pickle_file_format,
+        pickle_path=pickle_path,
+        Pkmeas_helper_columns=Pkmeas_helper_columns,
+        save_grids4plots=save_grids4plots,
+        grids4plots_base_path=grids4plots_base_path,
+        grids4plots_R=grids4plots_R,
+        cache_base_path=cache_base_path,
+        code_version_for_pickles=code_version_for_pickles
+        )
 
     #####################################
     # Initialize
     #####################################
 
     # make sure we keep the pickle if it is a big run and do not plot
-    if opts['grid_opts'].Ngrid > 256:
-        opts['keep_pickle'] = True
+    if grid_opts.Ngrid > 256:
+        keep_pickle = True
 
     ### derived options (do not move above b/c command line args might
     ### overwrite some options!)
@@ -32,7 +69,7 @@ def calculate_model_error(opts):
     # for output densities
     opts['out_rho_path'] = os.path.join(
         opts['in_path'],
-        'out_rho_Ng%d' % opts['grid_opts'].Ngrid
+        'out_rho_Ng%d' % grid_opts.Ngrid
     )
 
     # expand environment names in paths
@@ -52,7 +89,7 @@ def calculate_model_error(opts):
     comm = CurrentMPIComm.get()
     logger = logging.getLogger('PerrCalc')
 
-    model_spec.check_trf_specs_consistency(opts['trf_specs'])
+    model_spec.check_trf_specs_consistency(trf_specs)
 
   
     # Init Pickler instance to save pickle later (this will init pickle fname)
@@ -60,13 +97,13 @@ def calculate_model_error(opts):
     if comm.rank == 0:
         pickler = Pickler(path=paths['pickle_path'],
                           base_fname='main_calc_Perr',
-                          file_format=opts['pickle_file_format'],
-                          rand_sleep=(opts['grid_opts'].Ngrid > 128))
+                          file_format=pickle_file_format,
+                          rand_sleep=(grid_opts.Ngrid > 128))
         print("Pickler: ", pickler.full_fname)
     pickler = comm.bcast(pickler, root=0)
 
     # where to save grids for slice and scatter plots
-    if opts['save_grids4plots']:
+    if save_grids4plots:
         paths['grids4plots_path'] = os.path.join(
             paths['grids4plots_base_path'],
             os.path.basename(pickler.full_fname))
@@ -78,20 +115,21 @@ def calculate_model_error(opts):
 
     # Get list of all densities actually needed for trf fcns.
     densities_needed_for_trf_fcns = utils.get_densities_needed_for_trf_fcns(
-        opts['trf_specs'])
-    opts['densities_needed_for_trf_fcns'] = densities_needed_for_trf_fcns
+        trf_specs)
+    #opts['densities_needed_for_trf_fcns'] = densities_needed_for_trf_fcns
 
 
     # ##########################################################################
     # Run program.
     # ##########################################################################
 
-    if opts.get('RSDstrings', ['']) != ['']:
+    #if opts.get('RSDstrings', ['']) != ['']:
+    if RSDstrings not in [ None, [''] ]:
         # calculate D and f
-        cosmo = CosmoModel(**opts['sim_opts'].cosmo_params)
+        cosmo = CosmoModel(**sim_opts.cosmo_params)
         calc_Da = generate_calc_Da(cosmo=cosmo)
         f_log_growth = calc_f_log_growth_rate(
-            a=opts['sim_opts'].sim_scale_factor,
+            a=sim_opts.sim_scale_factor,
             calc_Da=calc_Da,
             cosmo=cosmo,
             do_test=True
@@ -103,18 +141,18 @@ def calculate_model_error(opts):
         opts['f_log_growth'] = None
 
     pickle_dict = combine_fields.paint_combine_and_calc_power(
-        trf_specs=opts['trf_specs'],
+        trf_specs=trf_specs,
         paths=paths,
-        catalogs=opts['cats'], 
-        needed_densities=opts['densities_needed_for_trf_fcns'],
-        ext_grids_to_load=opts['ext_grids_to_load'],
-        trf_fcn_opts=opts['trf_fcn_opts'],
-        grid_opts=opts['grid_opts'],
-        sim_opts=opts['sim_opts'],
-        power_opts=opts['power_opts'],
-        save_grids4plots=opts['save_grids4plots'],
-        grids4plots_R=opts['grids4plots_R'],
-        Pkmeas_helper_columns=opts['Pkmeas_helper_columns']
+        catalogs=cats,
+        needed_densities=densities_needed_for_trf_fcns,
+        ext_grids_to_load=ext_grids_to_load,
+        trf_fcn_opts=trf_fcn_opts,
+        grid_opts=grid_opts,
+        sim_opts=sim_opts,
+        power_opts=power_opts,
+        save_grids4plots=save_grids4plots,
+        grids4plots_R=grids4plots_R,
+        Pkmeas_helper_columns=Pkmeas_helper_columns
         )
 
     # copy over opts so they are saved
@@ -126,12 +164,12 @@ def calculate_model_error(opts):
         pickler.write_pickle(pickle_dict)
 
     # print path with grids for slice and scatter plotting
-    if opts['save_grids4plots']:
+    if save_grids4plots:
         print("grids4plots_path: %s" % paths['grids4plots_path'])
 
     # delete pickle if not wanted any more
     if comm.rank == 0:
-        if opts['keep_pickle']:
+        if keep_pickle:
             print("Pickle: %s" % pickler.full_fname)
         else:
             pickler.delete_pickle_file()
