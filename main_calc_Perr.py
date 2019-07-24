@@ -125,8 +125,14 @@ def main():
     # Cache path
     opts['cache_base_path'] = '$SCRATCH/perr/cache/'
 
-    # Run the program given the above opts.
-    outdict = model_error.calculate_model_error(**opts)
+    # what to return
+    opts['return_fields'] = ['residual']
+
+    # Run the program given the above opts, save results in pickle file.
+    residual_fields, outdict = model_error.calculate_model_error(**opts)
+
+    #for rf in residual_fields:
+    #    print(rf.compute(mode='real'))
 
 
 if __name__ == '__main__':

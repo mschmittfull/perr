@@ -4,6 +4,7 @@ import os
 from lsstools import combine_fields_to_match_target as combine_fields
 from lsstools.cosmo_model import CosmoModel
 from lsstools.gen_cosmo_fcns import calc_f_log_growth_rate, generate_calc_Da
+from lsstools.mesh_collections import ComplexGrid
 from lsstools import model_spec
 from lsstools.results_db.io import Pickler
 from nbodykit import CurrentMPIComm, logging, setup_logging
@@ -29,10 +30,14 @@ def calculate_model_error(
     grids4plots_R=None,
     cache_base_path=None,
     RSDstrings=None,
-    code_version_for_pickles=None
+    code_version_for_pickles=None,
+    return_fields=None,
     ):
     """
     Calculate the model error for all models specified by trf_specs.
+
+    Use return_fields=['bestfit'] or ['residual'] or ['bestfit','residual']
+    to return the fields as well, as lists in same order as trf_specs.
     """
 
     # store opts in dict so we can save in pickle later
@@ -140,6 +145,9 @@ def calculate_model_error(
     else:
         opts['f_log_growth'] = None
 
+    # Compute best-fit model and power spectra
+    # TODO: maybe split into method computing field and separate method to compute power spectra.
+    # For now, load fields from cache as workaround (see below)
     pickle_dict = combine_fields.paint_combine_and_calc_power(
         trf_specs=trf_specs,
         paths=paths,
@@ -154,6 +162,33 @@ def calculate_model_error(
         grids4plots_R=grids4plots_R,
         Pkmeas_helper_columns=Pkmeas_helper_columns
         )
+
+    # Load fields from cache if they shall be returned
+    if return_fields is not None:
+        if 'bestfit' in return_fields:
+            bestfit_fields = []
+            for trf_spec in trf_specs:
+                # load bestfit fields from cache
+                gridk = ComplexGrid(
+                    fname=pickle_dict['gridk_cache_fname'],
+                    read_columns=[trf_spec.save_bestfit_field])
+                bestfit_fields.append(gridk.G[trf_spec.save_bestfit_field])
+                del gridk
+
+        if 'residual' in return_fields:
+            residual_fields = []
+            for trf_spec in trf_specs:
+                # load residual field from cache
+                residual_key = '[%s]_MINUS_[%s]' % (
+                    trf_spec.save_bestfit_field,
+                    trf_spec.target_field)
+
+                gridk = ComplexGrid(
+                    fname=pickle_dict['gridk_cache_fname'],
+                    read_columns=[residual_key])
+
+                residual_fields.append(gridk.G[residual_key])
+                del gridk
 
     # copy over opts so they are saved
     assert not pickle_dict.has_key('opts')
@@ -174,11 +209,18 @@ def calculate_model_error(
         else:
             pickler.delete_pickle_file()
 
-        # remove cache dir
+        # delete cache dir
         from shutil import rmtree
         rmtree(paths['cache_path'])
 
-    return pickle_dict
+    if return_fields in [False, None]:
+        return pickle_dict
+    elif return_fields == ['bestfit']:
+        return bestfit_fields, pickle_dict
+    elif return_fields == ['residual']:
+        return residual_fields, pickle_dict
+    elif return_fields == ['bestfit','residual']:
+        return bestfit_fields, residual_fields, pickle_dict
 
 if __name__ == '__main__':
     main()
