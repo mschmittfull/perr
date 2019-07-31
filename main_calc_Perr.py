@@ -82,13 +82,6 @@ def main():
         interp_kind='manual_Pk_k_bins'
         )
 
-    # External grids to load: deltalin, delta_m, shifted grids
-    opts['ext_grids_to_load'] = opts['sim_opts'].get_default_ext_grids_to_load(
-        Ngrid=opts['grid_opts'].Ngrid)
-
-    # Catalogs to read
-    opts['cats'] = opts['sim_opts'].get_default_catalogs()
-
     # Specify bias expansions to test
     opts['trf_specs'] = []
 

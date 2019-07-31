@@ -21,11 +21,11 @@ def calculate_model_error(
     ext_grids_to_load=None,
     cats=None,
     trf_specs=None,
-    keep_pickle=None,
-    pickle_file_format=None,
-    pickle_path=None,
+    keep_pickle=False,
+    pickle_file_format='dill',
+    pickle_path='$SCRATCH/perr/pickle/',
     Pkmeas_helper_columns=None,
-    save_grids4plots=None,
+    save_grids4plots=False,
     grids4plots_base_path=None,
     grids4plots_R=None,
     cache_base_path=None,
@@ -67,6 +67,16 @@ def calculate_model_error(
     # make sure we keep the pickle if it is a big run and do not plot
     if grid_opts.Ngrid > 256:
         keep_pickle = True
+
+    # load defaults if not set
+    if ext_grids_to_load is None:
+        ext_grids_to_load = sim_opts.get_default_ext_grids_to_load(
+            Ngrid=grid_opts.Ngrid)
+
+    if cats is None:
+        cats = sim_opts.get_default_catalogs()
+
+    
 
     ### derived options (do not move above b/c command line args might
     ### overwrite some options!)
@@ -164,6 +174,7 @@ def calculate_model_error(
         )
 
     # Load fields from cache if they shall be returned
+    # (actually not used anywhere, could delete)
     if return_fields is not None:
         if 'bestfit' in return_fields:
             bestfit_fields = []

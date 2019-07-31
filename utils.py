@@ -4,7 +4,7 @@ import glob
 import os
 import random
 
-def get_densities_needed_for_trf_fcns(trf_specs):
+def get_densities_needed_for_trf_fcns(trf_specs, include_target=True):
     """Get list of all densities actually needed for trf fcns. Makes sure that
     we only load the densities from disk that we need.
 
@@ -29,15 +29,18 @@ def get_densities_needed_for_trf_fcns(trf_specs):
 
         # field_to_smoothen_and_square for quadratic fields, and target field
         for f in [ts.field_to_smoothen_and_square,
-                  ts.field_to_smoothen_and_square2,
-                  ts.target_field]:
+                  ts.field_to_smoothen_and_square2
+                  ]:
             if f is not None:
                 needed.add(f)
 
         # fields contributing to target
-        if hasattr(ts, 'target_spec'):
-            if hasattr(ts.target_spec, 'linear_target_contris'):
-                needed.update(set(ts.target_spec.linear_target_contris))
+        if include_target:
+            if ts.target_field is not None:
+                needed.add(ts.target_field)
+            if hasattr(ts, 'target_spec'):
+                if hasattr(ts.target_spec, 'linear_target_contris'):
+                    needed.update(set(ts.target_spec.linear_target_contris))
 
     return list(needed)
 

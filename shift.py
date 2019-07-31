@@ -78,7 +78,6 @@ def weigh_and_shift_uni_cats(
     # loop over all densities to be shifted (load from disk)
     for specs_of_density_to_shift in densities_to_shift:
 
-
         # ######################################################################
         # Load density to be shifted and weigh particles by delta
         # ######################################################################
@@ -166,7 +165,7 @@ def weigh_and_shift_uni_cats(
         # density.
         # ######################################################################
 
-        # get delta_shifted
+        # get delta_shifted  (get 1+delta)
         delta_shifted, attrs = weigh_and_shift_uni_cat(
             delta_for_weights=rfield_density_to_shift,
             displacements=Psi_rfields,
@@ -258,7 +257,8 @@ def weigh_and_shift_uni_cat(
     weighted_CIC_mode=None,
     uni_cat_generator='pmesh',
     plot_slices=False,
-    verbose=False
+    verbose=False,
+    return_catalog=False
     ):
     """
     Make uniform catalog, weigh by delta_for_weights, displace by displacements
@@ -266,12 +266,13 @@ def weigh_and_shift_uni_cat(
 
     Parameters
     ----------
-    delta_for_weights : pmesh.pm.RealField object
-        Particles are weighted by 1+delta_for_weights
+    delta_for_weights : None or pmesh.pm.RealField object
+        Particles are weighted by 1+delta_for_weights. If None, use weight=1.
 
     displacements : list
         [Psi_x, Psi_y, Psi_z] where Psi_i are pmesh.pm.RealField objects,
         holding the displacement field in different directions (on the grid).
+        If None, do not shift.
 
     uni_cat_generator : string
         If 'pmesh', use pmesh for generating uniform catalog.
@@ -280,9 +281,14 @@ def weigh_and_shift_uni_cat(
     Returns
     -------
     delta_shifted : FieldMesh object
-        Density delta_shifted of shifted weighted particles.
+        Density delta_shifted of shifted weighted particles (normalized to mean
+        of 1 i.e. returning 1+delta). Returned if return_catalog=False.
 
     attrs : meshsource attrs
+        Attrs of delta_shifted. Returned if return_catalog=False.
+
+    catalog_shifted : ArrayCatalog object
+        Shifted catalog, returned if return_catalog=True.
     """
     comm = CurrentMPIComm.get()
 
@@ -391,8 +397,13 @@ def weigh_and_shift_uni_cat(
     # Set weight of particles in uni_cat to delta (interpolated to ptcle 
     # positions)
     ########################################################################
-    nbkit03_utils.interpolate_pm_rfield_to_catalog(
-        delta_for_weights, uni_cat, catalog_column_to_save_to='Mass')
+    if delta_for_weights is None:
+        # set all weights to 1
+        uni_cat['Mass'] = np.ones(uni_cat['Position'].shape[0])
+    else:
+        # weight by delta_for_weights
+        nbkit03_utils.interpolate_pm_rfield_to_catalog(
+            delta_for_weights, uni_cat, catalog_column_to_save_to='Mass')
 
     print("%d: rms Mass: %g" %
           (comm.rank, np.sqrt(np.mean(np.array(uni_cat['Mass'])**2))))
@@ -438,56 +449,63 @@ def weigh_and_shift_uni_cat(
         verbose=verbose)
     #del Psi_rfields
 
-    # ######################################################################
-    # paint shifted catalog to grid, using field_to_shift as weights
-    # ######################################################################
+    if return_catalog:
+        # return shifted catalog
+        return uni_cat
 
-    print("%d: paint shifted catalog to grid using mass weights" %
-          comm.rank)
+    else:
+        # return density of shifted catalog, delta_shifted
 
-    delta_shifted, attrs = paint_utils.weighted_paint_cat_to_delta(
-        uni_cat,
-        weight='Mass',
-        Nmesh=out_Ngrid,
-        weighted_paint_mode=weighted_CIC_mode,
-        verbose=verbose,
-        to_mesh_kwargs={
-            'window': 'cic',
-            'compensated': False,
-            'interlaced': False
-        })
+        # ######################################################################
+        # paint shifted catalog to grid, using field_to_shift as weights
+        # ######################################################################
 
-    # ######################################################################
-    # rescale to output redshift
-    # ######################################################################
+        print("%d: paint shifted catalog to grid using mass weights" %
+              comm.rank)
 
-    # linear rescale factor from internal_scale_factor_for_weights to 
-    # out_scale_factor
-    rescalefac = nbkit03_utils.linear_rescale_fac(
-        internal_scale_factor_for_weights,
-        out_scale_factor,
-        cosmo_params=cosmo_params)
+        delta_shifted, attrs = paint_utils.weighted_paint_cat_to_delta(
+            uni_cat,
+            weight='Mass',
+            Nmesh=out_Ngrid,
+            weighted_paint_mode=weighted_CIC_mode,
+            verbose=verbose,
+            to_mesh_kwargs={
+                'window': 'cic',
+                'compensated': False,
+                'interlaced': False
+            })
 
-    delta_shifted *= rescalefac
+        # ######################################################################
+        # rescale to output redshift
+        # ######################################################################
 
-    # print some info:
-    if comm.rank == 0:
-        print("%d: Linear rescalefac from a=%g to a=%g, rescalefac=%g" %
-              (comm.rank, internal_scale_factor_for_weights,
-               out_scale_factor, rescalefac))
+        # linear rescale factor from internal_scale_factor_for_weights to 
+        # out_scale_factor
+        rescalefac = nbkit03_utils.linear_rescale_fac(
+            internal_scale_factor_for_weights,
+            out_scale_factor,
+            cosmo_params=cosmo_params)
 
-    if verbose:
-        print("%d: delta_shifted: min, mean, max, rms(x-1):" % comm.rank,
-              np.min(delta_shifted), np.mean(delta_shifted),
-              np.max(delta_shifted), np.mean((delta_shifted - 1.)**2)**0.5)
+        delta_shifted *= rescalefac
 
-    # get 1+deta mesh from field
-    #outmesh = FieldMesh(1 + out_delta)
+        # print some info:
+        if comm.rank == 0:
+            print("%d: Linear rescalefac from a=%g to a=%g, rescalefac=%g" %
+                  (comm.rank, internal_scale_factor_for_weights,
+                   out_scale_factor, rescalefac))
 
-    # print some info: this makes code never finish (race condition maybe?)
-    #nbkit03_utils.rfield_print_info(outfield, comm, 'outfield: ')
+        if verbose:
+            print("%d: delta_shifted: min, mean, max, rms(x-1):" % comm.rank,
+                  np.min(delta_shifted), np.mean(delta_shifted),
+                  np.max(delta_shifted), np.mean((delta_shifted - 1.)**2)**0.5)
 
-    return delta_shifted, attrs
+        # get 1+deta mesh from field
+        #outmesh = FieldMesh(1 + out_delta)
+
+        # print some info: this makes code never finish (race condition maybe?)
+        #nbkit03_utils.rfield_print_info(outfield, comm, 'outfield: ')
+
+        return delta_shifted, attrs
 
 
 def smoothing_str(smoothing_dict):
