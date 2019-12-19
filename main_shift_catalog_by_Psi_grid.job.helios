@@ -36,7 +36,7 @@ PsiOrder=1
 RSD=0
 
 
-source activate nbodykit-0.3.7-env
+conda activate nbodykit-0.3.7-env
 
 myscript=main_ms_gadget_shift_catalog_by_Psi_grid.py_$(date +%s%N)
 cp main_shift_catalog_by_Psi_grid.py $myscript
@@ -48,5 +48,5 @@ do
     srun -n 112 python $myscript $Nptcles $NgridOut --Nmesh=$NmeshInternal --SimSeed=$SimSeed --PsiOrder=$PsiOrder --RSD=$RSD
 done
         
-source deactivate                
+conda deactivate                
 
