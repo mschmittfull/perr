@@ -29,11 +29,11 @@ export OMP_NUM_THREADS=2
 
 Nptcles=1536
 NmeshInternal=1536  # should be >=Nptcles
-NgridOut=64
+NgridOut=256
 # 1: Zeldovich, 2: 2LPT
 PsiOrder=1
 # 0: No RSD, 1: Include RSD
-RSD=1
+RSD=0
 
 
 source activate nbodykit-0.3.7-env
