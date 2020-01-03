@@ -47,6 +47,7 @@ def main():
                     type=int,
                     default=400,
                     help='Simulation seed to load.')
+
     ap.add_argument('--PsiOrder',
                     type=int,
                     default=1,
@@ -92,17 +93,36 @@ def main():
     if opts['Nptcles_per_dim'] >= 512:
         opts['plot_slices'] = False
 
-    # ms_gadget L=500 sim
-    sim_name= 'ms_gadget'
-    opts['boxsize'] = 500.0
-    opts['basepath'] = os.path.expandvars(
-        '$SCRATCH/lss/ms_gadget/run4/00000%d-01536-%.1f-wig/' %
-        (sim_seed, opts['boxsize']))
+    if False:
+        # ms_gadget L=500 sim
+        sim_name= 'ms_gadget'
+        opts['boxsize'] = 500.0
+        opts['basepath'] = os.path.expandvars(
+            '$SCRATCH/lss/ms_gadget/run4/00000%d-01536-%.1f-wig/' %
+            (sim_seed, opts['boxsize']))
 
-    # Get deltalin at internal_scale_factor_for_weights, shift it by Psi(out_scale_factor),
-    # and then rescale the result from internal_scale_factor_for_weights to out_scale_factor.
-    # (We must use Psi at out_scale_factor to get correct displacement, which is larger at lower z.)
-    opts['out_scale_factor'] = 0.6250
+        # Get deltalin at internal_scale_factor_for_weights, shift it by Psi(out_scale_factor),
+        # and then rescale the result from internal_scale_factor_for_weights to out_scale_factor.
+        # (We must use Psi at out_scale_factor to get correct displacement, which is larger at lower z.)
+        opts['out_scale_factor'] = 0.6250
+        opts['deltalin_file_name'] = os.path.join(opts['basepath'],
+                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh'])
+        opts['deltalin_file_scale_factor'] = 1.0
+
+
+    if True:
+        # IllustrisTNG L=205 sim
+        sim_name = 'IllustrisTNG_L205n2500TNG'
+        opts['boxsize'] = 205.0
+        opts['basepath'] = os.path.expandvars(
+            '$DATA/lss/IllustrisTNG/L%ddn2500TNG/output/' % int(opts['boxsize']))
+        opts['out_scale_factor'] = 0.66531496
+        # deltalin
+        opts['deltalin_file_name'] = os.path.join(opts['basepath'],
+                         'snap_ics.hdf5_PtcleDensity_z127_Ng%d/' % opts['Nmesh'])
+        opts['deltalin_file_scale_factor'] = 1.0/(1.0+127.0)
+
+
     # Internal scale factor used for 1+delta weights. Initially used high z for that, but it should
     # be same as out_scale_factor b/c otherwise weights will be too small to matter (would get
     # almost the same as when shifting from uniform grid without weights).
@@ -124,11 +144,8 @@ def main():
         opts['densities_to_shift'].append({
             'id_for_out_fname':
             'IC_LinearMesh',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'external_smoothing':
             None
         })
@@ -137,11 +154,8 @@ def main():
         opts['densities_to_shift'].append({
             'id_for_out_fname':
             'IC_LinearMesh_growth-mean',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'external_smoothing':
             None,  # external smoothingn of delta^2(x)
             'smoothing_quadratic_source': {
@@ -156,11 +170,8 @@ def main():
         opts['densities_to_shift'].append({
             'id_for_out_fname':
             'IC_LinearMesh_tidal_G2',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'external_smoothing':
             None,  # external smoothingn of delta^2(x)
             'smoothing_quadratic_source': {
@@ -176,11 +187,8 @@ def main():
         opts['densities_to_shift'].append({
             'id_for_out_fname':
             'IC_LinearMesh_PsiNablaDelta',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'external_smoothing':
             None,  # external smoothingn of delta^2(x)
             'smoothing_quadratic_source': {
@@ -196,11 +204,8 @@ def main():
         opts['densities_to_shift'].append({
             'id_for_out_fname':
             '1',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'external_smoothing':
             None,
             'calc_trf_of_field':
@@ -211,11 +216,8 @@ def main():
         opts['densities_to_shift'].append({
             'id_for_out_fname':
             'IC_LinearMesh_cube-mean',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'external_smoothing':
             None,  # external smoothingn of delta^2(x)
             #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
@@ -234,11 +236,8 @@ def main():
         opts['densities_to_shift'].append({
             'id_for_out_fname':
             'IC_LinearMesh_short',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'external_smoothing': {
                 'mode': '1-Gaussian',
                 'R': 10.0
@@ -257,11 +256,8 @@ def main():
             'IC_LinearMesh',
             'Psi_type':
             'Zeldovich',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'smoothing': {
                 'mode': 'Gaussian',
                 'R': 0.23
@@ -275,11 +271,8 @@ def main():
             'Psi2LPT_IC_LinearMesh',
             'Psi_type':
             '2LPT',
-            'in_fname':
-            os.path.join(opts['basepath'],
-                         'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-            'file_scale_factor':
-            1.0,
+            'in_fname': opts['deltalin_file_name'],
+            'file_scale_factor': opts['deltalin_file_scale_factor'],
             'smoothing': {
                 'mode': 'Gaussian',
                 'R': 0.23
@@ -292,9 +285,8 @@ def main():
     #     opts['displacement_source'] = {
     #         'id_for_out_fname': '-Psi2LPT_IC_LinearMesh',
     #         'Psi_type': '-2LPT',
-    #         'in_fname': os.path.join(
-    #             opts['basepath'], 'IC_LinearMesh_z0_Ng%d/' % opts['Nmesh']),
-    #         'file_scale_factor': 1.0,
+    #        'in_fname': opts['deltalin_file_name'],
+    #        'file_scale_factor': opts['deltalin_file_scale_factor'],
     #         'smoothing': {'mode': 'Gaussian', 'R': 0.23}
     #         }
     else:
@@ -304,6 +296,13 @@ def main():
     if sim_name in ['jerryou_baoshift', 'ms_gadget']:
         opts['cosmo_params'] = dict(Om_m=0.307494,
                                     Om_L=1.0 - 0.307494,
+                                    Om_K=0.0,
+                                    Om_r=0.0,
+                                    h0=0.6774)
+
+    elif sim_name in ['IllustrisTNG_L205n2500TNG']:
+        opts['cosmo_params'] = dict(Om_m=0.3089,
+                                    Om_L=0.6911,
                                     Om_K=0.0,
                                     Om_r=0.0,
                                     h0=0.6774)

@@ -24,6 +24,9 @@ def get_in_path(opts):
     elif sim_opts.sim_name == 'RunPB':
         return os.path.join('$DATA/lss/mwhite/RunPB/PB%02d/' % sim_opts.sim_seed)
 
+    elif sim_opts.sim_name == 'IllustrisTNG_L205n2500TNG':
+        return os.path.join('$SCRATCH/lss/IllustrisTNG/L205n2500TNG/output/')
+
     elif sim_opts.sim_name == 'jerryou_baoshift':
         # MS 31/01/2018: Cannot recall why 309 was excluded here, removed it
         #if (sim_opts.boxsize==1380.) and (sim_opts.sim_Nptcles==2048) and 
