@@ -19,7 +19,7 @@
 #SBATCH --error=slurm-%x.e%j
 #SBATCH -J shift
 #SBATCH --exclusive
-#SBATCH --dependency=afterok:7655458
+#SBATCH --dependency=afterok:7655459
 
 set -x
 
@@ -35,7 +35,7 @@ export OMP_NUM_THREADS=2
 # was 1536
 Nptcles=2500
 NmeshInternal=2500  # should be >=Nptcles
-NgridOut=128
+NgridOut=256
 # 1: Zeldovich, 2: 2LPT
 PsiOrder=1
 # 0: No RSD, 1: Include RSD
