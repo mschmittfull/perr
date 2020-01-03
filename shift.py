@@ -220,16 +220,18 @@ def weigh_and_shift_uni_cats(
             if comm.rank == 0:
                 print("Writing to %s" % out_fname)
 
-                outmesh = FieldMesh(1+delta_shifted)
-                # copy MeshSource attrs
-                for k, v in attrs.items():
-                    outmesh.attrs['MeshSource_%s' % k] = v
-                if comm.rank == 0:
-                    print("outmesh.attrs:\n", outmesh.attrs)
+            outmesh = FieldMesh(1+delta_shifted)
 
-                outmesh.save(out_fname, mode='real')
-                if comm.rank == 0:
-                    print("Wrote %s" % out_fname)
+            # copy MeshSource attrs
+            for k, v in attrs.items():
+                outmesh.attrs['MeshSource_%s' % k] = v
+            if comm.rank == 0:
+                print("outmesh.attrs:\n", outmesh.attrs)
+
+            outmesh.save(out_fname, mode='real')
+            if comm.rank == 0:
+                print("Wrote %s" % out_fname)
+
         else:            
             if comm.rank == 0:
                 print("Not writing result to disk")
