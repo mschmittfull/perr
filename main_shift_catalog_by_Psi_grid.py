@@ -93,7 +93,7 @@ def main():
     if opts['Nptcles_per_dim'] >= 512:
         opts['plot_slices'] = False
 
-    if False:
+    if True:
         # ms_gadget L=500 sim
         sim_name= 'ms_gadget'
         opts['boxsize'] = 500.0
@@ -110,7 +110,7 @@ def main():
         deltalin_file_scale_factor = 1.0
 
 
-    if True:
+    if False:
         # IllustrisTNG L=205 sim
         sim_name = 'IllustrisTNG_L205n2500TNG'
         opts['boxsize'] = 205.0
@@ -139,6 +139,7 @@ def main():
 
     ## densities to shift
     opts['densities_to_shift'] = []
+
     if True:
         # shift delta_lin
         opts['densities_to_shift'].append({
@@ -243,6 +244,31 @@ def main():
                 'R': 10.0
             },
         })
+
+
+    #### ONLY TEST CUBIC OPERATORS
+    opts['densities_to_shift'] = []
+
+    if True:
+        # shift G3
+        opts['densities_to_shift'].append({
+            'id_for_out_fname':
+            'IC_LinearMesh_tidal_G3',
+            'in_fname': deltalin_file_name,
+            'file_scale_factor': deltalin_file_scale_factor,
+            'external_smoothing':
+            None,  # external smoothingn of delta^2(x)
+            #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
+            'smoothing_quadratic_source': {
+                'mode': 'Gaussian',
+                'R': 0.0,
+                'kmax': 0.5
+            },
+            'calc_quadratic_field':
+            'tidal_G3'
+        })
+
+
 
     ## Displacement field
     # Note: MP-Gadget libgenic/zeldovich.c applies smoothing by a gaussian kernel of 1 mesh grid
