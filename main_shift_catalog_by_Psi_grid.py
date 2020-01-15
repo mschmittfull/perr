@@ -93,7 +93,7 @@ def main():
     if opts['Nptcles_per_dim'] >= 512:
         opts['plot_slices'] = False
 
-    if True:
+    if False:
         # ms_gadget L=500 sim
         sim_name= 'ms_gadget'
         opts['boxsize'] = 500.0
@@ -110,13 +110,14 @@ def main():
         deltalin_file_scale_factor = 1.0
 
 
-    if False:
+    if True:
         # IllustrisTNG L=205 sim
         sim_name = 'IllustrisTNG_L205n2500TNG'
         opts['boxsize'] = 205.0
         opts['basepath'] = os.path.expandvars(
             '$DATA/lss/IllustrisTNG/L%dn2500TNG/output/' % int(opts['boxsize']))
-        opts['out_scale_factor'] = 0.66531496
+        #opts['out_scale_factor'] = 0.66531496 # snap 67
+        opts['out_scale_factor'] = 0.33310814 # snap 33
         # deltalin
         deltalin_file_name = os.path.join(opts['basepath'],
                          'snap_ics.hdf5_PtcleDensity_z127_Ng%d/' % opts['Nmesh'])
@@ -246,27 +247,67 @@ def main():
         })
 
 
-    #### ONLY TEST CUBIC OPERATORS
-    opts['densities_to_shift'] = []
+    if False:
+        #### ONLY TEST CUBIC OPERATORS
+        opts['densities_to_shift'] = []
 
-    if True:
-        # shift G3
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            'IC_LinearMesh_tidal_G3',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing':
-            None,  # external smoothingn of delta^2(x)
-            #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
-            'smoothing_quadratic_source': {
-                'mode': 'Gaussian',
-                'R': 0.0,
-                'kmax': 0.5
-            },
-            'calc_quadratic_field':
-            'tidal_G3'
-        })
+        if True:
+            # shift G2*delta
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_G2_delta',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,  # external smoothingn of delta^2(x)
+                #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
+                'smoothing_quadratic_source': {
+                    'mode': 'Gaussian',
+                    'R': 0.0,
+                    'kmax': 0.5
+                },
+                'calc_quadratic_field':
+                'G2_delta'
+            })
+
+
+        if True:
+            # shift G3
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_tidal_G3',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,  # external smoothingn of delta^2(x)
+                #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
+                'smoothing_quadratic_source': {
+                    'mode': 'Gaussian',
+                    'R': 0.0,
+                    'kmax': 0.5
+                },
+                'calc_quadratic_field':
+                'tidal_G3'
+            })
+
+        if True:
+            # shift Gamma3
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_Gamma3,
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,  # external smoothingn of delta^2(x)
+                #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
+                'smoothing_quadratic_source': {
+                    'mode': 'Gaussian',
+                    'R': 0.0,
+                    'kmax': 0.5
+                },
+                'calc_quadratic_field':
+                'Gamma3'
+            })
 
 
 
