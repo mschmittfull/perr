@@ -254,7 +254,7 @@ def main():
         # TODO: maybe apply more aggressive smoothing to avoid unwanted Dirac
         # delta images.
 
-        if False:
+        if True:
             # shift G2*delta
             opts['densities_to_shift'].append({
                 'id_for_out_fname':
@@ -274,7 +274,7 @@ def main():
             })
 
 
-        if False:
+        if True:
             # shift G3
             opts['densities_to_shift'].append({
                 'id_for_out_fname':
