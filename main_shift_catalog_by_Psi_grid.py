@@ -93,7 +93,7 @@ def main():
     if opts['Nptcles_per_dim'] >= 512:
         opts['plot_slices'] = False
 
-    if False:
+    if True:
         # ms_gadget L=500 sim
         sim_name= 'ms_gadget'
         opts['boxsize'] = 500.0
@@ -110,7 +110,7 @@ def main():
         deltalin_file_scale_factor = 1.0
 
 
-    if True:
+    if False:
         # IllustrisTNG L=205 sim
         sim_name = 'IllustrisTNG_L205n2500TNG'
         opts['boxsize'] = 205.0
@@ -247,11 +247,14 @@ def main():
         })
 
 
-    if False:
+    if True:
         #### ONLY TEST CUBIC OPERATORS
         opts['densities_to_shift'] = []
 
-        if True:
+        # TODO: maybe apply more aggressive smoothing to avoid unwanted Dirac
+        # delta images.
+
+        if False:
             # shift G2*delta
             opts['densities_to_shift'].append({
                 'id_for_out_fname':
@@ -271,7 +274,7 @@ def main():
             })
 
 
-        if True:
+        if False:
             # shift G3
             opts['densities_to_shift'].append({
                 'id_for_out_fname':
