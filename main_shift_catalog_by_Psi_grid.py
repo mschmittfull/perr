@@ -294,7 +294,7 @@ def main():
             # shift Gamma3
             opts['densities_to_shift'].append({
                 'id_for_out_fname':
-                'IC_LinearMesh_Gamma3,
+                'IC_LinearMesh_Gamma3',
                 'in_fname': deltalin_file_name,
                 'file_scale_factor': deltalin_file_scale_factor,
                 'external_smoothing':
