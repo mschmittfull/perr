@@ -27,6 +27,7 @@ def calculate_model_error(
     pickle_file_format='dill',
     pickle_path='$SCRATCH/perr/pickle/',
     Pkmeas_helper_columns=None,
+    Pkmeas_helper_columns_calc_crosses=False,
     save_grids4plots=False,
     grids4plots_base_path=None,
     grids4plots_R=None,
@@ -34,6 +35,8 @@ def calculate_model_error(
     RSDstrings=None,
     code_version_for_pickles=None,
     return_fields=None,
+    shifted_fields_Np=None,
+    shifted_fields_Nmesh=None,
     ):
     """
     Calculate the model error for all models specified by trf_specs.
@@ -176,7 +179,8 @@ def calculate_model_error(
         power_opts=power_opts,
         save_grids4plots=save_grids4plots,
         grids4plots_R=grids4plots_R,
-        Pkmeas_helper_columns=Pkmeas_helper_columns
+        Pkmeas_helper_columns=Pkmeas_helper_columns,
+        Pkmeas_helper_columns_calc_crosses=Pkmeas_helper_columns_calc_crosses
         )
 
     # Load fields from cache if they shall be returned

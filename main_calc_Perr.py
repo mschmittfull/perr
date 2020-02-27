@@ -34,7 +34,7 @@ def main():
 
     ap.add_argument('--SimSeed',
                     type=int,
-                    default=403,
+                    default=400,
                     help='Simulation seed to load.')
 
     ap.add_argument('--HaloMassString',
@@ -51,7 +51,7 @@ def main():
     # Bump this when changing code without changing options. Otherwise pickle
     # loading might wrongly read old pickles.
     #opts['main_calc_Perr_version'] = '0.2'
-    opts['code_version_for_pickles'] = '0.2'
+    opts['code_version_for_pickles'] = '0.3'
 
 
     # Simulation options. Will be used by path_utils to get input path, and
@@ -85,29 +85,57 @@ def main():
     # Specify bias expansions to test
     opts['trf_specs'] = []
 
-    # Quadratic Lagrangian bias: delta_Z + b1 deltalin(q+Psi) + b2 
-    # [deltalin^2-<deltalin^2>](q+Psi) + bG2 [G2](q+Psi)
-    opts['trf_specs'].append(
-        TrfSpec(linear_sources=[
-            'deltalin_SHIFTEDBY_deltalin',
-            'deltalin_growth-mean_SHIFTEDBY_deltalin',
-            'deltalin_G2_SHIFTEDBY_deltalin'
-        ],
-                fixed_linear_sources=['1_SHIFTEDBY_deltalin'],
+    if False:
+        # Quadratic Lagrangian bias: delta_Z + b1 deltalin(q+Psi) + b2 
+        # [deltalin^2-<deltalin^2>](q+Psi) + bG2 [G2](q+Psi)
+        opts['trf_specs'].append(
+            TrfSpec(linear_sources=[
+                'deltalin_SHIFTEDBY_deltalin',
+                'deltalin_growth-mean_SHIFTEDBY_deltalin',
+                'deltalin_G2_SHIFTEDBY_deltalin'
+            ],
+                    fixed_linear_sources=['1_SHIFTEDBY_deltalin'],
+                    field_to_smoothen_and_square=None,
+                    quadratic_sources=[],
+                    target_field='delta_h',
+                    save_bestfit_field=
+                    'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ'))
+
+    if True:
+        # Try out cubic operators
+        # Cubic Lagrangian bias with delta^3, G2*delta, G3 and Gamma3: 
+        # delta_Z + b1 deltalin(q+Psi) + b2 [deltalin^2-<deltalin^2>](q+Psi) + bG2 [G2](q+Psi)
+        # + b3 [delta^3](q+Psi) + ...
+        # With RSD, cannot orthogonalize deltalin^3 and deltalin at low k b/c too correlated?
+        RSDstring = ''
+        opts['trf_specs'].append(
+            TrfSpec(
+                linear_sources=[
+                    'deltalin_SHIFTEDBY_deltalin%s' % RSDstring,
+                    'deltalin_growth-mean_SHIFTEDBY_deltalin%s' % RSDstring,
+                    'deltalin_G2_SHIFTEDBY_deltalin%s' % RSDstring,
+                    'deltalin_cube-mean_SHIFTEDBY_deltalin%s' % RSDstring,
+                    'deltalin_G2_delta_SHIFTEDBY_deltalin%s' % RSDstring,
+                    'deltalin_G3_SHIFTEDBY_deltalin%s' % RSDstring,
+                    'deltalin_Gamma3_SHIFTEDBY_deltalin%s' % RSDstring
+                ],
+                fixed_linear_sources=['1_SHIFTEDBY_deltalin%s' % RSDstring],
                 field_to_smoothen_and_square=None,
                 quadratic_sources=[],
                 target_field='delta_h',
                 save_bestfit_field=
-                'hat_delta_h_from_1_Tdeltalin2G2_SHIFTEDBY_PsiZ'))
+                'hat_delta_h_from_1_Tdeltalin2G23dG2G3Gamma3_SHIFTEDBY_PsiZ'))
+
 
     # Save results
-    opts['keep_pickle'] = False
+    opts['keep_pickle'] = True
     opts['pickle_file_format'] = 'dill'
     opts['pickle_path'] = '$SCRATCH/perr/pickle/'
 
     # Save some additional power spectra that are useful for plotting later
     opts['Pkmeas_helper_columns'] = [
-        'delta_h', 'delta_m', '1_SHIFTEDBY_deltalin', 'deltalin'
+        #'delta_h', 'delta_m', '1_SHIFTEDBY_deltalin', 'deltalin'
+        '1_SHIFTEDBY_deltalin',
     ]
 
     # Save grids for 2d slice plots and histograms
