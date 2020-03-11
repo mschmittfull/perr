@@ -35,7 +35,7 @@ Nptcles=1536
 NmeshInternal=1536  # should be >=Nptcles
 NgridOut=512
 # 1: Zeldovich, 2: 2LPT
-PsiOrder=1
+PsiOrder=2
 # 0: No RSD, 1: Include RSD
 RSD=1
 
