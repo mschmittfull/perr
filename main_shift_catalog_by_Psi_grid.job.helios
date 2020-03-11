@@ -37,7 +37,7 @@ NgridOut=512
 # 1: Zeldovich, 2: 2LPT
 PsiOrder=1
 # 0: No RSD, 1: Include RSD
-RSD=0
+RSD=1
 
 
 conda activate nbodykit-0.3.7-env
