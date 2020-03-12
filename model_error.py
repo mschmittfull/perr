@@ -223,6 +223,11 @@ def calculate_model_error(
     if save_grids4plots:
         print("grids4plots_path: %s" % paths['grids4plots_path'])
 
+    # print save_bestfit_fields
+    save_bestfit_fields = [ t.save_bestfit_field for t in opts['trf_specs'] ]
+    print('\nsave_bestfit_fields:\n' + '\n'.join(save_bestfit_fields))
+
+
     # delete pickle if not wanted any more
     if comm.rank == 0:
         if keep_pickle:
