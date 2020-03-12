@@ -247,7 +247,7 @@ def main():
         })
 
 
-    if True:
+    if False:
         #### ONLY TEST CUBIC OPERATORS
         opts['densities_to_shift'] = []
 
