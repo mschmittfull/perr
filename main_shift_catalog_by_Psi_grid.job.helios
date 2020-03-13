@@ -45,8 +45,8 @@ myscript=main_ms_gadget_shift_catalog_by_Psi_grid.py_$(date +%s%N)
 cp main_shift_catalog_by_Psi_grid.py $myscript
 
 #for SimSeed in 0
-#for SimSeed in 400
-for SimSeed in 400 401 402 403 404
+#for SimSeed in 400 401 402 403 404
+for SimSeed in 404
 do
     # use 2 threads so here should be half of cores requested by SBATCH -n above
     srun -n 14 python $myscript $Nptcles $NgridOut --Nmesh=$NmeshInternal --SimSeed=$SimSeed --PsiOrder=$PsiOrder --RSD=$RSD
