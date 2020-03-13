@@ -156,6 +156,7 @@ def weigh_and_shift_uni_cats(
                     component=direction,
                     Psi_type=displacement_source['Psi_type'],
                     smoothing=displacement_source['smoothing'],
+                    smoothing_Psi3LPT=displacement_source['smoothing_Psi3LPT'],
                     RSD=RSD,
                     RSD_line_of_sight=RSD_line_of_sight,
                     RSD_f_log_growth=f_log_growth)

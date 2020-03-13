@@ -359,6 +359,45 @@ def main():
     #        'file_scale_factor': deltalin_file_scale_factor,
     #         'smoothing': {'mode': 'Gaussian', 'R': 0.23}
     #         }
+    elif opts['PsiOrder'] == 3:
+        # displace by Psi_3LPT[delta_lin]
+        opts['displacement_source'] = {
+            'id_for_out_fname':
+            'Psi3LPT_IC_LinearMesh',
+            'Psi_type':
+            '3LPT',
+            'in_fname': deltalin_file_name,
+            'file_scale_factor': deltalin_file_scale_factor,
+            'smoothing': {
+                'mode': 'Gaussian',
+                'R': 0.23
+            },
+            'smoothing_Psi3LPT': {
+                'mode': 'Gaussian',
+                'R': 0.23,
+                'kmax': 0.5
+            }
+        }
+    elif opts['PsiOrder'] == -3:
+        # displace by -Psi_3LPT[delta_lin]
+        opts['displacement_source'] = {
+            'id_for_out_fname':
+            'Psi3LPT_IC_LinearMesh',
+            'Psi_type':
+            '-3LPT',
+            'in_fname': deltalin_file_name,
+            'file_scale_factor': deltalin_file_scale_factor,
+            'smoothing': {
+                'mode': 'Gaussian',
+                'R': 0.23
+            },
+            'smoothing_Psi3LPT': {
+                'mode': 'Gaussian',
+                'R': 0.23,
+                'kmax': 0.5
+            }
+        }
+
     else:
         raise Exception("Invalid PsiOrder %s" % str(opts['PsiOrder']))
 
