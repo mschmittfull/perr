@@ -248,7 +248,7 @@ def main():
 
 
     if False:
-        #### ONLY TEST CUBIC OPERATORS
+        #### ONLY SHIFT NEW CUBIC OPERATORS
         opts['densities_to_shift'] = []
 
         # TODO: maybe apply more aggressive smoothing to avoid unwanted Dirac
