@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 # # required time of job
-#SBATCH -t 04:00:00
+#SBATCH -t 24:00:00
 # # number of processors (helios has 28 cores per node; 896 is half cluster)
 # # For Nptcles=NgridOut=512, need few minutes on 28 cores
 # # For Nptcles=1536, need half an hour with SBATCH -n 448, srun --n 224
@@ -30,11 +30,11 @@ export OMP_NUM_THREADS=2
 # (use half of allocated processors below so we can use 2 threads)
 
 # 1536 for ms_gadget, 2500 for IllustrisTNG
-Nptcles=256
-NmeshInternal=256  # should be >=Nptcles
+Nptcles=512
+NmeshInternal=512  # should be >=Nptcles
 NgridOut=512
 # 1: Zeldovich, 2: 2LPT, 3: 3LPT
-PsiOrder=1
+PsiOrder=-3
 # 0: No RSD, 1: Include RSD
 RSD=0
 

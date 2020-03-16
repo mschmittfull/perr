@@ -382,7 +382,7 @@ def main():
         # displace by -Psi_3LPT[delta_lin]
         opts['displacement_source'] = {
             'id_for_out_fname':
-            'Psi3LPT_IC_LinearMesh',
+            'Psi-3LPT_IC_LinearMesh',
             'Psi_type':
             '-3LPT',
             'in_fname': deltalin_file_name,
