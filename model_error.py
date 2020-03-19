@@ -146,7 +146,7 @@ def calculate_model_error(
     # ##########################################################################
 
     #if opts.get('RSDstrings', ['']) != ['']:
-    if RSDstrings not in [ None, [''] ]:
+    if True or RSDstrings not in [ None, [''] ]:
         # calculate D and f
         cosmo = CosmoModel(**sim_opts.cosmo_params)
         calc_Da = generate_calc_Da(cosmo=cosmo)
@@ -180,7 +180,8 @@ def calculate_model_error(
         save_grids4plots=save_grids4plots,
         grids4plots_R=grids4plots_R,
         Pkmeas_helper_columns=Pkmeas_helper_columns,
-        Pkmeas_helper_columns_calc_crosses=Pkmeas_helper_columns_calc_crosses
+        Pkmeas_helper_columns_calc_crosses=Pkmeas_helper_columns_calc_crosses,
+        f_log_growth=opts['f_log_growth']
         )
 
     # Load fields from cache if they shall be returned
