@@ -64,6 +64,9 @@ def weigh_and_shift_uni_cats(
     print("%d: Greetings from rank %d" % (comm.rank, comm.rank))
     logger = logging.getLogger("shift")
 
+    outmesh_dict = dict()
+    outfiles_dict = dict()
+
     if RSD:
         # calculate f
         cosmo = CosmoModel(**cosmo_params)
@@ -237,6 +240,16 @@ def weigh_and_shift_uni_cats(
             if comm.rank == 0:
                 print("Not writing result to disk")
 
+        # return mesh
+        if specs_of_density_to_shift['return_mesh']:
+            mykey = specs_of_density_to_shift['id_for_out_fname']
+            if mykey in outmesh_dict:
+                raise Exception('Do not overwrite outmesh_dict key')
+            else:
+                outmesh_dict[mykey] = outmesh
+
+            outfiles_dict[mykey] = out_fname
+
 
         # optionally plot slice
         if plot_slices:
@@ -247,6 +260,7 @@ def weigh_and_shift_uni_cats(
                 plt.savefig(plt_fname)
                 print("Made %s" % plt_fname)
 
+    return outmesh_dict, outfiles_dict
 
 def weigh_and_shift_uni_cat(
     delta_for_weights,

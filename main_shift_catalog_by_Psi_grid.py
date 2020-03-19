@@ -5,6 +5,7 @@ from nbodykit.lab import *
 import numpy as np
 import os
 
+from lsstools.nbkit03_utils import calc_divergence_of_3_meshs
 from shift import weigh_and_shift_uni_cats
 
 def main():
@@ -60,6 +61,7 @@ def main():
                     const=1,
                     default=0,
                     help='run in verbose mode, with increased logging output')
+    
     ap.add_argument('--RSD',
                     type=int,
                     default=0,
@@ -141,115 +143,118 @@ def main():
     ## densities to shift
     opts['densities_to_shift'] = []
 
-    if True:
-        # shift delta_lin
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            'IC_LinearMesh',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing':
-            None
-        })
-    if True:
-        # shift delta_lin^2-<delta_lin^2>
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            'IC_LinearMesh_growth-mean',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing':
-            None,  # external smoothingn of delta^2(x)
-            'smoothing_quadratic_source': {
-                'mode': 'Gaussian',
-                'R': 0.0
-            },
-            'calc_quadratic_field':
-            'growth-mean'
-        })
-    if True:
-        # shift G2[delta_lin]
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            'IC_LinearMesh_tidal_G2',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing':
-            None,  # external smoothingn of delta^2(x)
-            'smoothing_quadratic_source': {
-                'mode': 'Gaussian',
-                'R': 0.0
-            },  # 'kmax': opts['kmax']},
-            'calc_quadratic_field':
-            'tidal_G2'
-        })
-
-    if True:
-        # shift the shift term Psi.nabla delta
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            'IC_LinearMesh_PsiNablaDelta',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing':
-            None,  # external smoothingn of delta^2(x)
-            'smoothing_quadratic_source': {
-                'mode': 'Gaussian',
-                'R': 0.0
-            },  # 'kmax': opts['kmax']},
-            'calc_quadratic_field':
-            'PsiNablaDelta'
-        })
-
-    if True:
-        # shift the field 1 (this gives delta_ZA)
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            '1',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing':
-            None,
-            'calc_trf_of_field':
-            '1'
-        })
-    if True:
-        # shift deltalin^3
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            'IC_LinearMesh_cube-mean',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing':
-            None,  # external smoothingn of delta^2(x)
-            #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
-            'smoothing_quadratic_source': {
-                'mode': 'Gaussian',
-                'R': 0.0,
-                'kmax': 0.5
-            },
-            'calc_quadratic_field':
-            'cube-mean'
-        })
 
     if False:
-        # shift the field delta_short = (1-W_R)delta
-        # todo: implement
-        opts['densities_to_shift'].append({
-            'id_for_out_fname':
-            'IC_LinearMesh_short',
-            'in_fname': deltalin_file_name,
-            'file_scale_factor': deltalin_file_scale_factor,
-            'external_smoothing': {
-                'mode': '1-Gaussian',
-                'R': 10.0
-            },
-        })
+        # Shift linear and quadratic operators and delta^3
+
+        if True:
+            # shift delta_lin
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None
+            })
+        if True:
+            # shift delta_lin^2-<delta_lin^2>
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_growth-mean',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,  # external smoothingn of delta^2(x)
+                'smoothing_quadratic_source': {
+                    'mode': 'Gaussian',
+                    'R': 0.0
+                },
+                'calc_quadratic_field':
+                'growth-mean'
+            })
+        if True:
+            # shift G2[delta_lin]
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_tidal_G2',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,  # external smoothingn of delta^2(x)
+                'smoothing_quadratic_source': {
+                    'mode': 'Gaussian',
+                    'R': 0.0
+                },  # 'kmax': opts['kmax']},
+                'calc_quadratic_field':
+                'tidal_G2'
+            })
+
+        if True:
+            # shift the shift term Psi.nabla delta
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_PsiNablaDelta',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,  # external smoothingn of delta^2(x)
+                'smoothing_quadratic_source': {
+                    'mode': 'Gaussian',
+                    'R': 0.0
+                },  # 'kmax': opts['kmax']},
+                'calc_quadratic_field':
+                'PsiNablaDelta'
+            })
+
+        if True:
+            # shift the field 1 (this gives delta_ZA)
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                '1',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,
+                'calc_trf_of_field':
+                '1'
+            })
+        if True:
+            # shift deltalin^3
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_cube-mean',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing':
+                None,  # external smoothingn of delta^2(x)
+                #'smoothing_quadratic_source': {'mode': 'Gaussian', 'R': 0.0},
+                'smoothing_quadratic_source': {
+                    'mode': 'Gaussian',
+                    'R': 0.0,
+                    'kmax': 0.5
+                },
+                'calc_quadratic_field':
+                'cube-mean'
+            })
+
+        if False:
+            # shift the field delta_short = (1-W_R)delta
+            # todo: implement
+            opts['densities_to_shift'].append({
+                'id_for_out_fname':
+                'IC_LinearMesh_short',
+                'in_fname': deltalin_file_name,
+                'file_scale_factor': deltalin_file_scale_factor,
+                'external_smoothing': {
+                    'mode': '1-Gaussian',
+                    'R': 10.0
+                },
+            })
 
 
     if False:
-        #### ONLY SHIFT NEW CUBIC OPERATORS
-        opts['densities_to_shift'] = []
+        #### SHIFT NEW CUBIC OPERATORS G3, Gamma3, etc
 
         # TODO: maybe apply more aggressive smoothing to avoid unwanted Dirac
         # delta images.
@@ -312,9 +317,35 @@ def main():
                 'Gamma3'
             })
 
+    if True:
+        # Shift nth order Psidot and take divergence, to model velocity 
+        # divergence.
+
+        # We shift \dot Psi^{[n_max]} = sum_{n=1}^{n_max} \dot Psi^{(n)}, i.e.
+        # the displacement up to order n_max.
+
+        if True:
+            # Shift 1st order displacement by ZA
+            for order in [1]:
+                for direction in [0,1,2]:
+                    opts['densities_to_shift'].append({
+                        'id_for_out_fname':
+                        'IC_LinearMesh_PsiDot%d_%d' % (order, direction),
+                        'in_fname': deltalin_file_name,
+                        'file_scale_factor': deltalin_file_scale_factor,
+                        'external_smoothing':
+                        None,  # external smoothingn of delta^2(x)
+                        'smoothing_quadratic_source': {
+                            'mode': 'Gaussian',
+                            'R': 0.0
+                        },
+                        'calc_quadratic_field':
+                        'PsiDot%d_%d' % (order, direction),
+                        'return_mesh': True
+                    })
 
 
-    ## Displacement field
+    ## Displacement field by which operators are shifted.
     # Note: MP-Gadget libgenic/zeldovich.c applies smoothing by a gaussian kernel of 1 mesh grid
     # (i.e. R=boxsize/Nmesh*sqrt(2) b/c they use Gaussian w/o 0.5 in exponent), and they might do read-out
     # of displacements to ptcle positions using nearest neighbor instead of CIC we use. For L=500,
@@ -401,6 +432,19 @@ def main():
     else:
         raise Exception("Invalid PsiOrder %s" % str(opts['PsiOrder']))
 
+
+    # ADDITIONALLY COMPUTE DIVERGENCE of shifted fields.
+    # Entries are 3-tuples containing the fields whose divergence to compute.
+    compute_divergence_of_shifted_fields = []
+
+    if True:
+        # compute divergence of PsiDot1
+        compute_divergence_of_shifted_fields.append(
+            ('IC_LinearMesh_PsiDot1_0', 'IC_LinearMesh_PsiDot1_1',
+                'IC_LinearMesh_PsiDot1_2')
+            )
+    
+
     # COSMOLOGY OPTIONS
     if sim_name in ['jerryou_baoshift', 'ms_gadget']:
         opts['cosmo_params'] = dict(Om_m=0.307494,
@@ -422,11 +466,29 @@ def main():
     opts['Nmesh_orig'] = opts['Nmesh']
     del opts['Nmesh']
 
+
     # ##########################################################################
     # START PROGRAM
     # ##########################################################################
 
-    outmesh = weigh_and_shift_uni_cats(**opts)
+    # compute shifted densities and save to disk
+    outmesh_dict, outfiles_dict = weigh_and_shift_uni_cats(**opts)
+
+
+    # compute divergence of fields (to get velocity divergence)
+    for div_field_tuple in compute_divergence_of_shifted_fields:
+        # compute divergence of the three fields in div_field_tuple
+        div_mesh = calc_divergence_of_3_meshs(
+            (outmesh_dict[div_field_tuple[0]],
+             outmesh_dict[div_field_tuple[1]],
+             outmesh_dict[div_field_tuple[2]]))
+
+        # save to disk
+        head, tail = os.path.split(outfiles_dict[div_field_tuple[0]])
+        div_fname = os.path.join(head, 'div_' + tail)
+        div_mesh.save(div_fname, mode='real')
+        if div_mesh.comm.rank == 0:
+            print('Wrote %s' % div_fname)
 
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ Nptcles=512
 NmeshInternal=512  # should be >=Nptcles
 NgridOut=512
 # 1: Zeldovich, 2: 2LPT, 3: 3LPT
-PsiOrder=-3
+PsiOrder=1
 # 0: No RSD, 1: Include RSD
 RSD=0
 
@@ -44,8 +44,8 @@ conda activate nbodykit-0.3.7-env
 myscript=main_ms_gadget_shift_catalog_by_Psi_grid.py_$(date +%s%N)
 cp main_shift_catalog_by_Psi_grid.py $myscript
 
-#for SimSeed in 0
-for SimSeed in 400 401 402 403 404
+#for SimSeed in 400 401 402 403 404
+for SimSeed in 400
 do
     # can use 2 threads. then use half of cores requested by SBATCH -n above
     srun -n 28 python $myscript $Nptcles $NgridOut --Nmesh=$NmeshInternal --SimSeed=$SimSeed --PsiOrder=$PsiOrder --RSD=$RSD
