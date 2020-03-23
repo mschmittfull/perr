@@ -262,8 +262,9 @@ def weigh_and_shift_uni_cats(
                         Psi_type=RSD_displacement_source['Psi_type'], # to get k/k^2*in_density_rfield
                         smoothing=RSD_displacement_source['smoothing'])
 
-                # 23/03/2020: flip sign of displacement
-                Psi_RSD_rfields[direction] *= -f_log_growth
+                # 23/03/2020: flipping sign of displacement and using - here
+                # gives worse Perr.
+                Psi_RSD_rfields[direction] *= f_log_growth
 
             else:
                 raise Exception('RSD_line_of_sight not implemented: ',
