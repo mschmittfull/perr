@@ -16,8 +16,10 @@ def weigh_and_shift_uni_cats(
     out_Ngrid,
     densities_to_shift,
     displacement_source=None,
+    RSD_displacement_source=None,
     PsiOrder=1,
     RSD=False,
+    RSD_method=None,
     RSD_line_of_sight=None,
     basepath=None,
     out_scale_factor=None,
@@ -146,43 +148,140 @@ def weigh_and_shift_uni_cats(
             desired_scale_factor=out_scale_factor,
             cosmo_params=cosmo_params)
 
-        Psi_rfields = [None, None, None]
-        for direction in range(3):
-            # Get Psi_i = k_i delta_smoothed/k^2 following http://rainwoodman.github.io/pmesh/intro.html
-            if comm.rank == 0:
-                print("%d: Get Psi_%d: " % (comm.rank, direction))
+        RSD_method = specs_of_density_to_shift['RSD_method']
 
-            # Compute displacement
-            Psi_rfields[
-                direction] = nbkit03_utils.get_displacement_from_density_rfield(
-                    rfield_displacement_source,
-                    component=direction,
-                    Psi_type=displacement_source['Psi_type'],
-                    smoothing=displacement_source['smoothing'],
-                    smoothing_Psi3LPT=displacement_source.get('smoothing_Psi3LPT', None),
-                    RSD=RSD,
-                    RSD_line_of_sight=RSD_line_of_sight,
-                    RSD_f_log_growth=f_log_growth)
+        if (RSD==False) or (RSD==True and RSD_method == 'LPT'):
 
-        # ######################################################################
-        # Shift uniform catalog weighted by delta_for_weights and get shifted
-        # density.
-        # ######################################################################
+            Psi_rfields = [None, None, None]
+            for direction in range(3):
+                # Get Psi_i = k_i delta_smoothed/k^2 following http://rainwoodman.github.io/pmesh/intro.html
+                if comm.rank == 0:
+                    print("%d: Get Psi_%d: " % (comm.rank, direction))
 
-        # get delta_shifted  (get 1+delta)
-        delta_shifted, attrs = weigh_and_shift_uni_cat(
-            delta_for_weights=rfield_density_to_shift,
-            displacements=Psi_rfields,
-            Nptcles_per_dim=Nptcles_per_dim,
-            out_Ngrid=out_Ngrid,
-            boxsize=boxsize,
-            internal_scale_factor_for_weights=internal_scale_factor_for_weights,
-            out_scale_factor=out_scale_factor,
-            cosmo_params=cosmo_params,
-            weighted_CIC_mode=weighted_CIC_mode,
-            plot_slices=plot_slices,
-            verbose=verbose
-        )
+                # Compute displacement
+                Psi_rfields[
+                    direction] = nbkit03_utils.get_displacement_from_density_rfield(
+                        rfield_displacement_source,
+                        component=direction,
+                        Psi_type=displacement_source['Psi_type'],
+                        smoothing=displacement_source['smoothing'],
+                        smoothing_Psi3LPT=displacement_source.get('smoothing_Psi3LPT', None),
+                        RSD=RSD,
+                        RSD_line_of_sight=RSD_line_of_sight,
+                        RSD_f_log_growth=f_log_growth)
+
+            # ######################################################################
+            # Shift uniform catalog weighted by delta_for_weights and get shifted
+            # density.
+            # ######################################################################
+
+            # get delta_shifted  (get 1+delta)
+            delta_shifted, attrs = weigh_and_shift_uni_cat(
+                delta_for_weights=rfield_density_to_shift,
+                displacements=Psi_rfields,
+                Nptcles_per_dim=Nptcles_per_dim,
+                out_Ngrid=out_Ngrid,
+                boxsize=boxsize,
+                internal_scale_factor_for_weights=internal_scale_factor_for_weights,
+                out_scale_factor=out_scale_factor,
+                cosmo_params=cosmo_params,
+                weighted_CIC_mode=weighted_CIC_mode,
+                plot_slices=plot_slices,
+                verbose=verbose
+            )
+
+
+        elif RSD_method == 'PotentialOfRSDDisplSource_xPtcles':
+            ## Step 1: Move operators without any RSD displacement. 
+            ## Step 2: Apply RSD displacement in EUlerian space by displacing by
+            # k/k^2*delta_RSD_displ_source, where delta_RSD_displ_source=delta_ZA.
+            
+            assert RSD_displacement_source is not None
+
+            ## Step 1: Move operators without any RSD displacement. 
+            Psi_rfields = [None, None, None]
+            for direction in range(3):
+                # Get Psi_i = k_i delta_smoothed/k^2 following http://rainwoodman.github.io/pmesh/intro.html
+                if comm.rank == 0:
+                    print("%d: Get Psi_%d: " % (comm.rank, direction))
+
+                # Compute displacement used to displace operators from q to x
+                Psi_rfields[
+                    direction] = nbkit03_utils.get_displacement_from_density_rfield(
+                        rfield_displacement_source,
+                        component=direction,
+                        Psi_type=displacement_source['Psi_type'],
+                        smoothing=displacement_source['smoothing'],
+                        smoothing_Psi3LPT=displacement_source.get('smoothing_Psi3LPT', None),
+                        RSD=False,  # no RSD displacement in step 1
+                        RSD_line_of_sight=RSD_line_of_sight,
+                        RSD_f_log_growth=f_log_growth)
+
+            del rfield_displacement_source
+
+            # Shift uniform catalog weighted by rfield_density_to_shift.
+            # get delta_shifted  (get 1+delta)
+            delta_shifted_noRSD, attrs = weigh_and_shift_uni_cat(
+                delta_for_weights=rfield_density_to_shift,
+                displacements=Psi_rfields,
+                Nptcles_per_dim=Nptcles_per_dim,
+                out_Ngrid=out_Ngrid,
+                boxsize=boxsize,
+                internal_scale_factor_for_weights=internal_scale_factor_for_weights,
+                out_scale_factor=out_scale_factor,
+                cosmo_params=cosmo_params,
+                weighted_CIC_mode=weighted_CIC_mode,
+                plot_slices=plot_slices,
+                verbose=verbose
+            )
+
+
+            ## Step 2: Apply RSD displacement in Eulerian x space by displacing 
+            # by k/k^2*deltaZA.
+
+            # Generate new uniform catalog in x space, with particle weights
+            # given by delta_shifted(x). Then shift by k/k^2 delta_ZA(x).
+            # Note k/k^2 delta_ZA != k/k^2 delta_lin = Psi_ZA.
+            # In general, use delta_RSD_displacement_source.
+            del Psi_rfields
+
+            # get RSD displacement source field from bigmesh file; scale to out_scale_factor
+            rfield_RSD_displacement_source = nbkit03_utils.get_rfield_from_bigfilemesh_file(
+                RSD_displacement_source['in_fname'],
+                file_scale_factor=RSD_displacement_source['file_scale_factor'],
+                desired_scale_factor=out_scale_factor,
+                cosmo_params=cosmo_params)
+
+            Psi_RSD_rfields = [None, None, None]
+            if RSD_line_of_sight == [0,0,1]:
+                # get k_z / k^2 delta_ZA
+                direction = 2
+                Psi_RSD_rfields[direction] = nbkit03_utils.get_displacement_from_density_rfield(
+                        in_density_rfield=rfield_RSD_displacement_source,
+                        component=direction,
+                        Psi_type=RSD_displacement_source['Psi_type'], # to get k/k^2*in_density_rfield
+                        smoothing=RSD_displacement_source['smoothing'])
+            else:
+                raise Exception('RSD_line_of_sight not implemented: ',
+                    RSD_line_of_sight)
+
+            delta_shifted, attrs = weigh_and_shift_uni_cat(
+                delta_for_weights=delta_shifted_noRSD,
+                displacements=Psi_RSD_rfields,
+                Nptcles_per_dim=Nptcles_per_dim,
+                out_Ngrid=out_Ngrid,
+                boxsize=boxsize,
+                internal_scale_factor_for_weights=internal_scale_factor_for_weights,
+                out_scale_factor=out_scale_factor,
+                cosmo_params=cosmo_params,
+                weighted_CIC_mode=weighted_CIC_mode,
+                plot_slices=plot_slices,
+                verbose=verbose
+            )
+
+
+        else:
+            raise Exception('Invalid RSD_method %s' % RSD_method)
 
         # print cmean
         shifted_cmean = delta_shifted.cmean()
@@ -204,9 +303,16 @@ def weigh_and_shift_uni_cats(
                                                 RSD_line_of_sight[2])
                 else:
                     # actually not implemented above
-                    RSDstring = '_RSD_%.2f_%.2f_%.2f.hdf5' % (
+                    RSDstring = '_RSD_%.2f_%.2f_%.2f' % (
                         RSD_line_of_sight[0], RSD_line_of_sight[1],
                         RSD_line_of_sight[2])
+
+                if RSD_method == 'LPT':
+                    pass
+                elif RSD_method == 'PotentialOfRSDDisplSource_xPtcles':
+                    RSDstring += "_%s" % RSD_displacement_source['id_for_out_fname']
+                else:
+                    raise Exception('Invalid RSD_method %s' % RSD_method)
 
             out_fname = os.path.join(
                 basepath,
@@ -241,7 +347,7 @@ def weigh_and_shift_uni_cats(
                 print("Not writing result to disk")
 
         # return mesh
-        if specs_of_density_to_shift['return_mesh']:
+        if specs_of_density_to_shift.get('return_mesh', False):
             mykey = specs_of_density_to_shift['id_for_out_fname']
             if mykey in outmesh_dict:
                 raise Exception('Do not overwrite outmesh_dict key')
