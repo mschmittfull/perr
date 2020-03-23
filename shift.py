@@ -237,10 +237,10 @@ def weigh_and_shift_uni_cats(
 
 
             ## Step 2: Apply RSD displacement in Eulerian x space by displacing 
-            # by k/k^2*deltaZA.
+            # by f*k/k^2*deltaZA.
 
             # Generate new uniform catalog in x space, with particle weights
-            # given by delta_shifted(x). Then shift by k/k^2 delta_ZA(x).
+            # given by delta_shifted(x). Then shift by fk/k^2 delta_ZA(x).
             # Note k/k^2 delta_ZA != k/k^2 delta_lin = Psi_ZA.
             # In general, use delta_RSD_displacement_source.
             del Psi_rfields
@@ -261,6 +261,9 @@ def weigh_and_shift_uni_cats(
                         component=direction,
                         Psi_type=RSD_displacement_source['Psi_type'], # to get k/k^2*in_density_rfield
                         smoothing=RSD_displacement_source['smoothing'])
+
+                Psi_RSD_rfields[direction] *= f_log_growth
+                
             else:
                 raise Exception('RSD_line_of_sight not implemented: ',
                     RSD_line_of_sight)
