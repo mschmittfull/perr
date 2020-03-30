@@ -127,8 +127,13 @@ def weigh_and_shift_uni_cats(
                     "Invalid calc_trf_of_field %s" %
                     str(specs_of_density_to_shift['calc_trf_of_field']))
 
-        if specs_of_density_to_shift['external_smoothing'] is not None:
-            raise Exception("todo")
+
+        if specs_of_density_to_shift.get('external_smoothing', None) is not None:
+            rfield_density_to_shift = nbkit03_utils.apply_smoothing(
+                mesh_source=FieldMesh(rfield_density_to_shift),
+                **specs_of_density_to_shift['external_smoothing']
+                ).compute(mode='real')
+
 
         # print("%d: rfield_density_to_shift: type=%s, shape=%s, rms=%g"% (
         #     comm.rank, str(type(rfield_density_to_shift)), str(rfield_density_to_shift.shape),
