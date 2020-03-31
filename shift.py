@@ -340,7 +340,9 @@ def weigh_and_shift_uni_cats(
             if comm.rank == 0:
                 print("Writing to %s" % out_fname)
 
-            outmesh = FieldMesh(1+delta_shifted)
+            # delta_shifted contains 1+delta_shifted
+            # Wrongly used FieldMesh(1+delta_shifted) until 31/3/2020.
+            outmesh = FieldMesh(delta_shifted)
 
             # copy MeshSource attrs
             for k, v in attrs.items():
@@ -596,36 +598,59 @@ def weigh_and_shift_uni_cat(
         print("%d: paint shifted catalog to grid using mass weights" %
               comm.rank)
 
-        delta_shifted, attrs = paint_utils.weighted_paint_cat_to_delta(
-            uni_cat,
-            weight='Mass',
-            Nmesh=out_Ngrid,
-            weighted_paint_mode=weighted_CIC_mode,
-            verbose=verbose,
-            to_mesh_kwargs={
-                'window': 'cic',
-                'compensated': False,
-                'interlaced': False
-            })
+        # this gets 1+delta
+        if weighted_CIC_mode == 'sum':
+            delta_shifted, attrs = paint_utils.weighted_paint_cat_to_delta(
+                uni_cat,
+                weight='Mass',
+                Nmesh=out_Ngrid,
+                weighted_paint_mode=weighted_CIC_mode,
+                normalize=True, # compute 1+delta
+                verbose=verbose,
+                to_mesh_kwargs={
+                    'window': 'cic',
+                    'compensated': False,
+                    'interlaced': False
+                })
+
+        elif weighted_CIC_mode == 'avg':
+            delta_shifted, attrs = paint_utils.mass_avg_weighted_paint_cat_to_delta(
+                uni_cat,
+                weight='Mass',
+                set_mean=1.0, # to get 1+delta
+                Nmesh=out_Ngrid,
+                verbose=verbose,
+                to_mesh_kwargs={
+                    'window': 'cic',
+                    'compensated': False,
+                    'interlaced': False
+                })
+
+        else:
+            raise Exception('Invalid weighted_CIC_mode %s' % weighted_CIC_mode)
 
         # ######################################################################
         # rescale to output redshift
         # ######################################################################
 
-        # linear rescale factor from internal_scale_factor_for_weights to 
-        # out_scale_factor
-        rescalefac = nbkit03_utils.linear_rescale_fac(
-            internal_scale_factor_for_weights,
-            out_scale_factor,
-            cosmo_params=cosmo_params)
+        if internal_scale_factor_for_weights != out_scale_factor:
+            # linear rescale factor from internal_scale_factor_for_weights to 
+            # out_scale_factor
+            rescalefac = nbkit03_utils.linear_rescale_fac(
+                internal_scale_factor_for_weights,
+                out_scale_factor,
+                cosmo_params=cosmo_params)
 
-        delta_shifted *= rescalefac
+            delta_shifted *= rescalefac
 
-        # print some info:
-        if comm.rank == 0:
-            print("%d: Linear rescalefac from a=%g to a=%g, rescalefac=%g" %
-                  (comm.rank, internal_scale_factor_for_weights,
-                   out_scale_factor, rescalefac))
+            # print some info:
+            if comm.rank == 0:
+                print("%d: Linear rescalefac from a=%g to a=%g, rescalefac=%g" %
+                      (comm.rank, internal_scale_factor_for_weights,
+                       out_scale_factor, rescalefac))
+
+            raise Exception('Check if rescaling of delta_shifted is correct. Looks like 1+delta.')
+
 
         if verbose:
             print("%d: delta_shifted: min, mean, max, rms(x-1):" % comm.rank,
