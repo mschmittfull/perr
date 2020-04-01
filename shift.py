@@ -613,11 +613,11 @@ def weigh_and_shift_uni_cat(
                     'interlaced': False
                 })
 
+        # this get rho
         elif weighted_CIC_mode == 'avg':
-            delta_shifted, attrs = paint_utils.mass_avg_weighted_paint_cat_to_delta(
+            delta_shifted, attrs = paint_utils.mass_avg_weighted_paint_cat_to_rho(
                 uni_cat,
                 weight='Mass',
-                set_mean=1.0, # to get 1+delta
                 Nmesh=out_Ngrid,
                 verbose=verbose,
                 to_mesh_kwargs={
