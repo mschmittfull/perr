@@ -21,7 +21,9 @@ def get_densities_needed_for_trf_fcns(trf_specs, include_target=True):
     needed = set()
     for ts in trf_specs:
         # linear sources
-        needed.update(set(ts.linear_sources))
+        if hasattr(ts, 'linear_sources'):
+            if ts.linear_sources is not None:
+                needed.update(set(ts.linear_sources))
 
         # fixed linear sources
         if hasattr(ts, 'fixed_linear_sources'):
