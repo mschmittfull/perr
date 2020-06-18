@@ -8,7 +8,7 @@ def get_in_path(opts):
     Paths of different simulations. Add new entries for other simulations.
     """
     sim_opts = opts['sim_opts']
-    if sim_opts.sim_name == 'ms_gadget':
+    if sim_opts.sim_name in ['ms_gadget', 'ms_gadget_L1500']:
         return '$SCRATCH/lss/ms_gadget/run%d/%08d-%05d-%.1f-%s/' % (
             sim_opts.sim_irun, sim_opts.sim_seed, sim_opts.sim_Nptcles,
             sim_opts.boxsize, sim_opts.sim_wig_now_string)
