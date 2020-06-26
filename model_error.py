@@ -37,6 +37,7 @@ def calculate_model_error(
     return_fields=None,
     shifted_fields_Np=None,
     shifted_fields_Nmesh=None,
+    shifted_fields_RPsi=None
     ):
     """
     Calculate the model error for all models specified by trf_specs.
