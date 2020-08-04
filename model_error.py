@@ -130,9 +130,10 @@ def calculate_model_error(
         paths['grids4plots_path'] = os.path.join(
             paths['grids4plots_base_path'],
             os.path.basename(pickler.full_fname))
-        if not os.path.exists(paths['grids4plots_path']):
-            os.makedirs(paths['grids4plots_path'])
-        print("grids4plots_path:", paths['grids4plots_path'])
+        if comm.rank == 0:
+            if not os.path.exists(paths['grids4plots_path']):
+                os.makedirs(paths['grids4plots_path'])
+            print("grids4plots_path:", paths['grids4plots_path'])
 
     paths['cache_path'] = utils.make_cache_path(paths['cache_base_path'], comm)
 
