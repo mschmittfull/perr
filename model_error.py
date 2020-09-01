@@ -28,6 +28,7 @@ def calculate_model_error(
     pickle_path='$SCRATCH/perr/pickle/',
     Pkmeas_helper_columns=None,
     Pkmeas_helper_columns_calc_crosses=False,
+    store_Pkmeas_in_trf_results=False,
     save_grids4plots=False,
     grids4plots_base_path=None,
     grids4plots_R=None,
@@ -61,6 +62,8 @@ def calculate_model_error(
         pickle_file_format=pickle_file_format,
         pickle_path=pickle_path,
         Pkmeas_helper_columns=Pkmeas_helper_columns,
+        Pkmeas_helper_columns_calc_crosses=Pkmeas_helper_columns_calc_crosses,
+        store_Pkmeas_in_trf_results=store_Pkmeas_in_trf_results,
         save_grids4plots=save_grids4plots,
         grids4plots_base_path=grids4plots_base_path,
         grids4plots_R=grids4plots_R,
@@ -183,6 +186,7 @@ def calculate_model_error(
         grids4plots_R=grids4plots_R,
         Pkmeas_helper_columns=Pkmeas_helper_columns,
         Pkmeas_helper_columns_calc_crosses=Pkmeas_helper_columns_calc_crosses,
+        store_Pkmeas_in_trf_results=store_Pkmeas_in_trf_results,
         f_log_growth=opts['f_log_growth']
         )
 
