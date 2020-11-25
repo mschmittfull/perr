@@ -8,9 +8,13 @@ The code combines a number of source fields to get the best proxy of a target fi
 Example applications
 --------------------
 
-- Combine delta_m, delta_m^2, G_2[delta_m] to get proxy of target=delta_halo. This tests the halo bias expansion.
+- Real space halo bias expansion at the field level: Combine delta_m, delta_m^2, G_2[delta_m] and other fields to get proxy of target=delta_halo. Use main_calc_Perr.py for this. To submit multiple jobs to compute this, run main_calc_Perr.job.helios.spawn.py. The results will be saved in dill files that can be loaded as shown in the notebooks.
 
-- Combine different mass-weighted delta_h fields to get proxy of target=delta_m. This can be used to test how well mass-weighted halos can recover the dark matter field.
+- The fields in the bias expansion can also be shifted fields as defined in arxiv:1811.10640. In that case, large-scale (infrared) displacements are included. To precompute these shifted fields, run main_shift_catalog_by_Psi_grid.py. An example job script is in main_shift_catalog_by_Psi_grid.job.helios. 
+
+- The same can be done in redshift space, using main_calc_RSD_Perr.py.
+
+- Combine different mass-weighted delta_h fields to get proxy of target=delta_m. This can be used to test how well mass-weighted halos can recover the dark matter field. For this, modify main_calc_Perr.py accordingly (exchanging source and target fields).
 
 
 Example usage
@@ -40,7 +44,7 @@ Example usage
 
     $ run.sh python main_calc_Perr.py
 
-- To generate shifted densities (i.e. the IR-resummed shifted operators from the paper), run
+- To generate shifted densities (i.e. the IR-resummed shifted operators from arxiv:1811.10640), run
 
   .. code-block:: bash
 
