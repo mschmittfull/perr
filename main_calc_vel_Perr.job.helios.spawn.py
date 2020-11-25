@@ -9,7 +9,7 @@ def main():
 
     tryid = 'RunV4'
 
-    binfile = '/home/mschmittfull/CODE/perr_private/main_calc_vel_Perr.py_%s' % tryid
+    binfile = '/home/mschmittfull/CODE/perr/main_calc_vel_Perr.py_%s' % tryid
     sim_seeds = range(401,405)
     #sim_seeds = [400]
 

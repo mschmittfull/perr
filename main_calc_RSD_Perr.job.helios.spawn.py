@@ -9,7 +9,7 @@ def main():
 
     tryid = 'RunB2d'
 
-    binfile = '/home/mschmittfull/CODE/perr_private/main_calc_RSD_Perr.py_%s' % tryid
+    binfile = '/home/mschmittfull/CODE/perr/main_calc_RSD_Perr.py_%s' % tryid
     #sim_seeds = range(400,406)
     #sim_seeds = [400,402,403,404,405]
     #sim_seeds = [400,402,403,404]
