@@ -220,8 +220,8 @@ def main():
             #for target in ['delta_h']:
             #for target in ['delta_g']:
             #for target in ['delta_gPTC', 'delta_gPTC_GodPsiDot1']:
-            #for target in ['delta_gPTC']:
-            for target in ['delta_gPTC_11.5']:
+            #for target in ['delta_gPTC_11.5']:
+            for target in ['delta_gPTC']:
                 target += target_RSDstring
 
                 if False:
