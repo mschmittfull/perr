@@ -7,7 +7,7 @@ def main():
     ## OPTIONS
     do_submit = True
 
-    tryid = 'RunB2d'
+    tryid = 'RunB1e'
 
     binfile = '/home/mschmittfull/CODE/perr/main_calc_RSD_Perr.py_%s' % tryid
     #sim_seeds = range(400,406)
@@ -30,7 +30,7 @@ def main():
     halo_mass_strings = ['']
 
     # simulation boxsize
-    if True:
+    if False:
         boxsize = 1500.
         shifted_fields_RPsi = 0.69
     else:
@@ -38,12 +38,12 @@ def main():
         shifted_fields_RPsi = 0.23
 
     ## Select shifting options
-    shifted_fields_Np_Nmesh = [(1536,1536)]  # used until 13 March 2020
+    #shifted_fields_Np_Nmesh = [(1536,1536)]  # used until 13 March 2020
     #shifted_fields_Np_Nmesh = [(256,256), (512,512), (1536,1536)]
-    #shifted_fields_Np_Nmesh = [(512,512)]
+    shifted_fields_Np_Nmesh = [(1536,1536)]
 
     # Ngrid to compute Perr (usually 512 or 1536)
-    Ngrid = 1536
+    Ngrid = 512
 
     # number of nodes to run on
     if Ngrid>1024:
